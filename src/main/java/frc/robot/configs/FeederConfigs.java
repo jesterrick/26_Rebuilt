@@ -34,5 +34,7 @@ public class FeederConfigs {
         .smartCurrentLimit(FeederConstants.kCurrentLimit);
 
     config.idleMode(IdleMode.kBrake);
+
+    config.inverted(false);
   }
 }

@@ -117,7 +117,7 @@ public class RobotContainer {
       .and(() -> RobotHealth.isHealthy("Launcher"))
       .and(() -> RobotHealth.isHealthy("Feeder"))
       .whileTrue(
-        m_Launcher.launch(() -> m_operatorJoystick.getRawAxis(6))
+        m_Launcher.launch(() -> m_operatorJoystick.getRawAxis(5))
             .alongWith(
                 // turn on the feeder after launcher has reached speed
                 new WaitUntilCommand(m_Launcher::atSpeed)

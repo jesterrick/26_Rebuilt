@@ -29,6 +29,8 @@ public class IntakeConfigs {
         .kS(IntakeConstants.kS)
         .kA(IntakeConstants.kA);
 
+    config.inverted(false);
+
     config
       .voltageCompensation(GlobalConstants.kLowVoltageCompensation)
       .smartCurrentLimit(IntakeConstants.kCurrentLimit);

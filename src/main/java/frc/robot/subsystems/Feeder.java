@@ -22,9 +22,8 @@ public class Feeder extends SubsystemBase {
   public Feeder() {
     this.m_FeederMotor = new SparkMax(CanIdConstants.kFeederMotor, MotorType.kBrushless);
 
-    SparkMaxConfig frontMotorConfig = new SparkMaxConfig().apply(FeederConfigs.config);
-    frontMotorConfig.inverted(true);
-    this.m_FeederMotor.configure(frontMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    SparkMaxConfig feederMotorConfig = new SparkMaxConfig().apply(FeederConfigs.config);
+    this.m_FeederMotor.configure(feederMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
   }
 

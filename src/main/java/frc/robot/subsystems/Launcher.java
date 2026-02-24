@@ -4,12 +4,15 @@
 
 package frc.robot.subsystems;
 
-import com.ctre.phoenix6.hardware.TalonFX;
-
 import java.util.function.DoubleSupplier;
 
 import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.hardware.TalonFX;
+
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.configs.LauncherConfigs;
 import frc.robot.constants.CanIdConstants;
@@ -17,9 +20,10 @@ import frc.robot.constants.LauncherConstants;
 
 public class Launcher extends SubsystemBase {
   private final TalonFX m_IntakeMotor;
-  private final DutyCycleOut m_dutyCycleOut = new DutyCycleOut(0);
+  private final VelocityVoltage m_velocityRequest = new VelocityVoltage(0);
 
   private double m_TargetSpeed;
+  private boolean idleOn = false;
 
   /** Creates a new Launcher. */
   public Launcher() {
@@ -31,19 +35,21 @@ public class Launcher extends SubsystemBase {
 
   @Override
   public void periodic() {
-
+    SmartDashboard.putNumber("Launcher/Current Speed", getActualVelocity());
+    SmartDashboard.putNumber("Launcher/Target Speed", m_TargetSpeed);
+    SmartDashboard.putBoolean("Launcher/At Speed", atSpeed());
   }
 
   private double calculateRPMFromSlider(double slideValue) {
     double min = LauncherConstants.kMinLaunchSpeed;
     double max = LauncherConstants.kMaxLaunchSpeed;
 
-    double speed = slideValue * ((max - min) * slideValue);
+    double speed = min + (slideValue * (max - min));
     return speed;
   }
 
   private void runMotor(double speed) {
-    this.m_IntakeMotor.setControl(m_dutyCycleOut.withOutput(speed));
+    this.m_IntakeMotor.setControl(m_velocityRequest.withVelocity(speed));
   }
 
   private void stopMotor() {
@@ -69,24 +75,44 @@ public class Launcher extends SubsystemBase {
 
   public Command launch(DoubleSupplier speedSupplier) {
     return this.run(() -> {
+      SmartDashboard.putNumber("Launcher/Slider Value", speedSupplier.getAsDouble());
       double speed = (speedSupplier.getAsDouble() + 1) / 2;
-      this.runMotor(this.calculateRPMFromSlider(speed));
+      this.m_TargetSpeed = this.calculateRPMFromSlider(speed);
+      this.runMotor(this.m_TargetSpeed);
     })
         .withName("LauncherOn")
-        .finallyDo(this::stopMotor); // Replaces the end() method in your old file
+        .finallyDo((interrupted) -> {
+          if (this.idleOn) {
+            // Return to the "Idle" state if that's where we started
+            this.runMotor(LauncherConstants.kLauncherIdleSpeed);
+            this.m_TargetSpeed = LauncherConstants.kLauncherIdleSpeed;
+          } else {
+            // Otherwise, shut it down
+            this.stopMotor();
+            this.m_TargetSpeed = 0.0;
+          }
+        });
   }
 
   public Command idle() {
-    return this.run(() -> this.runMotor(LauncherConstants.kLauncherIdleSpeed))
-        .withName("LauncherIdle")
-        .finallyDo(this::stopMotor);
+    return this.run(() -> {
+      this.m_TargetSpeed = LauncherConstants.kLauncherIdleSpeed;
+      this.runMotor(this.m_TargetSpeed);
+      this.idleOn = true; // Mark that we are now in "Idle Mode"
+    })
+        .withName("LauncherIdle");
   }
 
   public Command off() {
-    return this.run(() -> this.stopMotor());
+    return this.runOnce(() -> {
+      this.stopMotor();
+      this.m_TargetSpeed = 0.0;
+      this.idleOn = false; // Turn off the "Return to Idle" behavior
+    })
+        .withName("LauncherOff");
   }
 
-   public TalonFX getMotor() {
+  public TalonFX getMotor() {
     return this.m_IntakeMotor;
   }
 }

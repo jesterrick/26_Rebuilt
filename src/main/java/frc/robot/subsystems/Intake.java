@@ -22,9 +22,8 @@ public class Intake extends SubsystemBase {
   public Intake() {
     this.m_IntakeMotor = new SparkMax(CanIdConstants.kIntakeMotor, MotorType.kBrushless);
 
-    SparkMaxConfig frontMotorConfig = new SparkMaxConfig().apply(IntakeConfigs.config);
-    frontMotorConfig.inverted(true);
-    this.m_IntakeMotor.configure(frontMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    SparkMaxConfig intakeMotorConfig = new SparkMaxConfig().apply(IntakeConfigs.config);
+    this.m_IntakeMotor.configure(intakeMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
   }
 
