@@ -6,22 +6,20 @@ public class LauncherConstants {
 
   /* Motor Control Configs */
 
-  public static final double kP = 0.1;
+  public static final double kP = 0.11;
   public static final double kI = 0.00;
-  public static final double kD = 0.00;
-  public static final double kV = 0.00;
-  public static final double kS = 0.1;
-  public static final double kA = 0.05;
+  public static final double kD = 0.01;
+  public static final double kV = 0.12;
+  public static final double kS = 0.15;
+  public static final double kA = 0.0;
   public static final double kMaxAccel = 25.0;
 
   public static final double kAllowedError = 0.1;
 
-  public static final double kLauncherIdleSpeed = 500;
-
-  public static final double kMinLaunchSpeed = 1500;
-  public static final double kMaxLaunchSpeed = 4500;
-
-  public static final double kTolerance = 200.0;
+  public static final double kLauncherIdleSpeed = 8.0; // ~480 RPM
+  public static final double kMinLaunchSpeed = 25.0; // 1500 RPM
+  public static final double kMaxLaunchSpeed = 75.0; // 4500 RPM
+  public static final double kTolerance = 3.0; // ~180 RPM tolerance
 
   /* Fixed Hardware Configs */
 
@@ -29,7 +27,7 @@ public class LauncherConstants {
   private static final double kGearRatio = 1.0;
 
   public static final double kPositionFactor = RobotUtils.calculateLinearFactor(kGearRatio, wheelSize);
-  public static final double kVelocityFactor = RobotUtils.toVelocityPerSecond(kPositionFactor);
+  public static final double kVelocityFactor = kGearRatio;
 
   public static final int kCurrentLimit = GlobalConstants.kMediumCurrentLimit;
 
