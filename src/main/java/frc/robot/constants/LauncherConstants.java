@@ -24,10 +24,10 @@ public class LauncherConstants {
   /* Fixed Hardware Configs */
 
   private static final double wheelSize = 4.0;
-  private static final double kGearRatio = 1.0;
+  public static final double kGearRatio = 1.0;
 
   public static final double kPositionFactor = RobotUtils.calculateLinearFactor(kGearRatio, wheelSize);
-  public static final double kVelocityFactor = kGearRatio;
+  public static final double kVelocityFactor = RobotUtils.toVelocityPerSecond(kPositionFactor);
 
   public static final int kCurrentLimit = GlobalConstants.kMediumCurrentLimit;
 

@@ -35,6 +35,6 @@ public class FeederConfigs {
 
     config.idleMode(IdleMode.kBrake);
 
-    config.inverted(false);
+    config.inverted(true);
   }
 }

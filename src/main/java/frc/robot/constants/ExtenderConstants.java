@@ -26,7 +26,7 @@ public class ExtenderConstants {
 
   public static final double kGearRatio = 1.0;
 
-  private static final double pitchDiameter = 1.25;
+  private static final double pitchDiameter = 2.14;
 
   public static final double kPositionFactor = RobotUtils.calculateLinearFactor(kGearRatio, pitchDiameter);;
   public static final double kVelocityFactor = RobotUtils.toVelocityPerSecond(kPositionFactor);

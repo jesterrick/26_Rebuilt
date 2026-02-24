@@ -23,9 +23,11 @@ public class LauncherConfigs {
     slot0.kS = LauncherConstants.kS;
     slot0.kA = LauncherConstants.kA;
 
-    config.Feedback.SensorToMechanismRatio = LauncherConstants.kVelocityFactor;
+    config.Feedback.SensorToMechanismRatio = LauncherConstants.kGearRatio;
     
     config.CurrentLimits.SupplyCurrentLimit = LauncherConstants.kCurrentLimit;
+
+    config.Voltage.PeakReverseVoltage = 0.0;
 
     config.MotorOutput.NeutralMode = NeutralModeValue.Coast;
   }

@@ -38,7 +38,7 @@ public class RobotContainer {
   public DriveSubsystem m_RobotDrive = new DriveSubsystem();
   public Intake m_Intake = new Intake();
   public Launcher m_Launcher = new Launcher();
-  //public Extender m_Extender = new Extender();
+  public Extender m_Extender = new Extender();
   public Feeder m_Feeder = new Feeder();
 
   // The driver's controller
@@ -82,7 +82,6 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-    /*/
     // bring in the extender and stop the intake
     this.b_ExtendIn
       .and(() -> RobotHealth.isHealthy("Extender Leader"))
@@ -94,7 +93,7 @@ public class RobotContainer {
       .and(() -> RobotHealth.isHealthy("Extender Leader"))
       .and(() -> RobotHealth.isHealthy("Extender Follower"))
       .onTrue(m_Extender.fullExtend());
-    */
+    
      // turn on the intake motor to pick up the fuel cells
     this.b_IntakeReceive
       .and(() -> RobotHealth.isHealthy("Intake"))
@@ -140,8 +139,8 @@ public class RobotContainer {
     checkMotor(m_RobotDrive.getRightRearTurn(), "Right Rear Turn");
     checkMotor(m_RobotDrive.getLeftRearDrive(), "Left Rear Drive");
     checkMotor(m_RobotDrive.getLeftRearTurn(), "Left Rear Turn");
-    //checkMotor(m_Extender.getLeader(), "Extender Leader");
-    //checkMotor(m_Extender.getFollower(), "Extender Follower");
+    checkMotor(m_Extender.getLeader(), "Extender Leader");
+    checkMotor(m_Extender.getFollower(), "Extender Follower");
     checkMotor(m_Intake.getMotor(), "Intake");
     checkMotor(m_Feeder.getMotor(), "Feeder");
     checkMotor(m_Launcher.getMotor(), "Launcher");

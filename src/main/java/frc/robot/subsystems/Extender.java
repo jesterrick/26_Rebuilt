@@ -7,6 +7,7 @@ package frc.robot.subsystems;
 import frc.robot.configs.ExtenderConfigs;
 import frc.robot.constants.CanIdConstants;
 import frc.robot.constants.ExtenderConstants;
+import frc.robot.utils.RobotUtils;
 
 import com.revrobotics.spark.SparkLowLevel;
 import com.revrobotics.spark.SparkMax;
@@ -17,6 +18,7 @@ import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.RelativeEncoder;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
@@ -29,7 +31,9 @@ public class Extender extends SubsystemBase {
   private final RelativeEncoder m_LeaderEncoder;
   private final RelativeEncoder m_FollowEncoder;
 
+  private double m_TargetPOS = 0.0;
   private boolean m_isFaulted = false;
+
 
   /** Creates a new Extender. */
   public Extender() {
@@ -44,7 +48,7 @@ public class Extender extends SubsystemBase {
 
     // Configure motor controllers (no encoder config needed for SparkMax)
     SparkMaxConfig leaderConfig = new SparkMaxConfig().apply(ExtenderConfigs.config);
-    leaderConfig.inverted(false);
+    leaderConfig.inverted(true);
     this.m_LeaderMotor.configure(leaderConfig, ResetMode.kResetSafeParameters,
         PersistMode.kPersistParameters);
 
@@ -52,6 +56,9 @@ public class Extender extends SubsystemBase {
     followerConfig.follow(this.m_LeaderMotor, true);
     this.m_FollowMotor.configure(followerConfig, ResetMode.kResetSafeParameters,
         PersistMode.kPersistParameters);
+
+    this.m_LeaderEncoder.setPosition(0);
+    this.m_FollowEncoder.setPosition(0);    
   }
 
   @Override
@@ -63,6 +70,10 @@ public class Extender extends SubsystemBase {
 
     double leaderPos = this.m_LeaderEncoder.getPosition();
     double followPos = this.m_FollowEncoder.getPosition();
+
+    SmartDashboard.putNumber("Extender/Leader POS", RobotUtils.metersToInches(leaderPos));
+    SmartDashboard.putNumber("Extender/Follow POS", RobotUtils.metersToInches(followPos));
+    SmartDashboard.putNumber("Extender/Target POS", RobotUtils.metersToInches(this.m_TargetPOS));
 
     if (Math.abs(leaderPos - followPos) > ExtenderConstants.kMaxPositionDifference) {
       m_isFaulted = true; // Trip the software breaker
@@ -79,6 +90,7 @@ public class Extender extends SubsystemBase {
     return this.run(() -> {
       if (!m_isFaulted) {
         this.m_LeaderController.setSetpoint(position, ControlType.kMAXMotionPositionControl);
+        this.m_TargetPOS = position;
       }
     })
         .until(() -> m_isFaulted)
