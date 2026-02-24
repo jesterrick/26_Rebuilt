@@ -64,6 +64,6 @@ public class CanIdConstants {
     public static final int kFeederMotor = 30;
 
     // CAN IDs for the Launcher
-    public static final int kLauncherLeaderMotor = 35;
-    public static final int kLauncherFollowMotor = 36;
+    public static final int kLauncherMotor = 35;
+    //public static final int kLauncherFollowMotor = 36;
 }

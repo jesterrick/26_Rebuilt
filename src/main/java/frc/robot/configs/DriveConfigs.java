@@ -22,6 +22,7 @@ public final class DriveConfigs {
 
       drivingConfig
           .idleMode(IdleMode.kBrake)
+          .voltageCompensation(GlobalConstants.kMedVoltageCompensation)
           .smartCurrentLimit(GlobalConstants.kHighCurrentLimit);
       drivingConfig.encoder
           .positionConversionFactor(drivingFactor) // meters
@@ -37,6 +38,7 @@ public final class DriveConfigs {
 
       turningConfig
           .idleMode(IdleMode.kBrake)
+          .voltageCompensation(GlobalConstants.kLowVoltageCompensation)
           .smartCurrentLimit(GlobalConstants.kLowCurrentLimit);
       turningConfig.absoluteEncoder
           // Invert the turning encoder, since the output shaft rotates in the opposite

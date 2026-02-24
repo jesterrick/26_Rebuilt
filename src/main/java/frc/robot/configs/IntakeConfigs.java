@@ -8,6 +8,7 @@ import com.revrobotics.spark.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
+import frc.robot.constants.GlobalConstants;
 import frc.robot.constants.IntakeConstants;
 
 /** Add your docs here. */
@@ -28,7 +29,9 @@ public class IntakeConfigs {
         .kS(IntakeConstants.kS)
         .kA(IntakeConstants.kA);
 
-    config.smartCurrentLimit(IntakeConstants.kCurrentLimit);
+    config
+      .voltageCompensation(GlobalConstants.kLowVoltageCompensation)
+      .smartCurrentLimit(IntakeConstants.kCurrentLimit);
 
     config.idleMode(IdleMode.kBrake);
   }

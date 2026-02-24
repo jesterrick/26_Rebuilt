@@ -5,13 +5,10 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.MotorAlignmentValue;
 
 import java.util.function.DoubleSupplier;
 
 import com.ctre.phoenix6.controls.DutyCycleOut;
-import com.ctre.phoenix6.controls.Follower;
-
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.configs.LauncherConfigs;
@@ -19,21 +16,15 @@ import frc.robot.constants.CanIdConstants;
 import frc.robot.constants.LauncherConstants;
 
 public class Launcher extends SubsystemBase {
-  private final TalonFX m_LeaderMotor;
-  private final TalonFX m_FollowMotor;
-  private final Follower m_Follower;
+  private final TalonFX m_IntakeMotor;
   private final DutyCycleOut m_dutyCycleOut = new DutyCycleOut(0);
 
   private double m_TargetSpeed;
 
   /** Creates a new Launcher. */
   public Launcher() {
-    this.m_LeaderMotor = new TalonFX(CanIdConstants.kLauncherLeaderMotor);
-    this.m_FollowMotor = new TalonFX(CanIdConstants.kLauncherFollowMotor);
-    this.m_LeaderMotor.getConfigurator().apply(LauncherConfigs.config);
-
-    this.m_Follower = new Follower(this.m_LeaderMotor.getDeviceID(), MotorAlignmentValue.Opposed);
-    this.m_FollowMotor.setControl(this.m_Follower);
+    this.m_IntakeMotor = new TalonFX(CanIdConstants.kLauncherMotor);
+    this.m_IntakeMotor.getConfigurator().apply(LauncherConfigs.config);
 
     this.m_TargetSpeed = 0.0;
   }
@@ -52,16 +43,15 @@ public class Launcher extends SubsystemBase {
   }
 
   private void runMotor(double speed) {
-    this.m_LeaderMotor.setControl(m_dutyCycleOut.withOutput(speed));
+    this.m_IntakeMotor.setControl(m_dutyCycleOut.withOutput(speed));
   }
 
   private void stopMotor() {
-    this.m_LeaderMotor.stopMotor();
-    this.m_FollowMotor.stopMotor();
+    this.m_IntakeMotor.stopMotor();
   }
 
   private double getActualVelocity() {
-    return this.m_LeaderMotor.getVelocity().getValueAsDouble();
+    return this.m_IntakeMotor.getVelocity().getValueAsDouble();
   }
 
   public boolean atSpeed() {
@@ -96,11 +86,7 @@ public class Launcher extends SubsystemBase {
     return this.run(() -> this.stopMotor());
   }
 
-  public TalonFX getLeader(){
-    return this.m_LeaderMotor;
-  }
-
-  public TalonFX getFollower(){
-    return this.m_FollowMotor;
+   public TalonFX getMotor() {
+    return this.m_IntakeMotor;
   }
 }

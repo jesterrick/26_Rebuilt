@@ -10,6 +10,7 @@ import com.revrobotics.spark.config.MAXMotionConfig.MAXMotionPositionMode;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 import frc.robot.constants.ExtenderConstants;
+import frc.robot.constants.GlobalConstants;
 
 /** Add your docs here. */
 public class ExtenderConfigs {
@@ -41,7 +42,9 @@ public class ExtenderConfigs {
         .reverseSoftLimitEnabled(true)
         .reverseSoftLimit(0.0);
 
-    config.smartCurrentLimit(ExtenderConstants.kCurrentLimit);
+    config
+        .voltageCompensation(GlobalConstants.kMedVoltageCompensation)
+        .smartCurrentLimit(ExtenderConstants.kCurrentLimit);
 
     config.idleMode(IdleMode.kBrake);
   }

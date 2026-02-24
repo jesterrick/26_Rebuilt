@@ -9,6 +9,7 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import frc.robot.constants.FeederConstants;
+import frc.robot.constants.GlobalConstants;
 
 /** Add your docs here. */
 public class FeederConfigs {
@@ -28,7 +29,9 @@ public class FeederConfigs {
         .kS(FeederConstants.kS)
         .kA(FeederConstants.kA);
 
-    config.smartCurrentLimit(FeederConstants.kCurrentLimit);
+    config
+        .voltageCompensation(GlobalConstants.kLowVoltageCompensation)
+        .smartCurrentLimit(FeederConstants.kCurrentLimit);
 
     config.idleMode(IdleMode.kBrake);
   }

@@ -36,10 +36,10 @@ import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   public DriveSubsystem m_RobotDrive = new DriveSubsystem();
-  /*public Intake m_Intake = new Intake();
+  public Intake m_Intake = new Intake();
   public Launcher m_Launcher = new Launcher();
-  public Extender m_Extender = new Extender();
-  public Feeder m_Feeder = new Feeder(); */
+  //public Extender m_Extender = new Extender();
+  public Feeder m_Feeder = new Feeder();
 
   // The driver's controller
   Joystick m_driverJoystick = new Joystick(OIConstants.kDriverJoystickPort);
@@ -82,12 +82,7 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-    // turn on the intake motor to pick up the fuel cells
     /*/
-    this.b_IntakeReceive
-      .and(() -> RobotHealth.isHealthy("Intake"))
-      .whileTrue(m_Intake.receive());
-
     // bring in the extender and stop the intake
     this.b_ExtendIn
       .and(() -> RobotHealth.isHealthy("Extender Leader"))
@@ -99,25 +94,27 @@ public class RobotContainer {
       .and(() -> RobotHealth.isHealthy("Extender Leader"))
       .and(() -> RobotHealth.isHealthy("Extender Follower"))
       .onTrue(m_Extender.fullExtend());
+    */
+     // turn on the intake motor to pick up the fuel cells
+    this.b_IntakeReceive
+      .and(() -> RobotHealth.isHealthy("Intake"))
+      .whileTrue(m_Intake.receive());
 
     // set launcher to idle
     this.b_LauncherIdleOn
-      .and(() -> RobotHealth.isHealthy("Launcher Leader"))
-      .and(() -> RobotHealth.isHealthy("Launcher Follower"))
+      .and(() -> RobotHealth.isHealthy("Launcher"))
       .and(() -> RobotHealth.isHealthy("Feeder"))
       .onTrue(m_Launcher.idle());
 
     // turn off idle
     this.b_LauncherIdleOff
-      .and(() -> RobotHealth.isHealthy("Launcher Leader"))
-      .and(() -> RobotHealth.isHealthy("Launcher Follower"))
+      .and(() -> RobotHealth.isHealthy("Launcher"))
       .and(() -> RobotHealth.isHealthy("Feeder"))
       .onTrue(m_Launcher.off());
 
     // set launcher speed based on the slider
     this.b_Launcher
-      .and(() -> RobotHealth.isHealthy("Launcher Leader"))
-      .and(() -> RobotHealth.isHealthy("Launcher Follower"))
+      .and(() -> RobotHealth.isHealthy("Launcher"))
       .and(() -> RobotHealth.isHealthy("Feeder"))
       .whileTrue(
         m_Launcher.launch(() -> m_operatorJoystick.getRawAxis(6))
@@ -125,7 +122,7 @@ public class RobotContainer {
                 // turn on the feeder after launcher has reached speed
                 new WaitUntilCommand(m_Launcher::atSpeed)
                     .andThen(m_Feeder.feedLauncher())));
-  */}
+  }
 
   public void startHealthChecks() {
     // 0.5 means it checks every half-second.
@@ -143,14 +140,12 @@ public class RobotContainer {
     checkMotor(m_RobotDrive.getRightRearTurn(), "Right Rear Turn");
     checkMotor(m_RobotDrive.getLeftRearDrive(), "Left Rear Drive");
     checkMotor(m_RobotDrive.getLeftRearTurn(), "Left Rear Turn");
-    /*
-    checkMotor(m_Extender.getLeader(), "Extender Leader");
-    checkMotor(m_Extender.getFollower(), "Extender Follower");
+    //checkMotor(m_Extender.getLeader(), "Extender Leader");
+    //checkMotor(m_Extender.getFollower(), "Extender Follower");
     checkMotor(m_Intake.getMotor(), "Intake");
     checkMotor(m_Feeder.getMotor(), "Feeder");
-    checkMotor(m_Launcher.getLeader(), "Launcher Leader");
-    checkMotor(m_Launcher.getFollower(), "Launcher Follower");
-    */
+    checkMotor(m_Launcher.getMotor(), "Launcher");
+    
     // This sends one big string like "{Extender Leader=OK, Feeder=DISCONNECTED}"
     SmartDashboard.putString("Health/Report", RobotHealth.getReport());
     

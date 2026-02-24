@@ -12,4 +12,8 @@ public class GlobalConstants {
     public static final int kMediumCurrentLimit = 40; 
     /** Low current limit, suitable for lighter mechanisms such as intakes, small extenders, or turning motors. */
     public static final int kLowCurrentLimit = 20; 
+
+    public static final double kLowVoltageCompensation = 10.0;
+    public static final double kMedVoltageCompensation = 11.0;
+    public static final double kHighVoltageCompensation = 12.0;
 }
