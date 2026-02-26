@@ -33,6 +33,6 @@ public class ExtenderConstants {
   public static final double kPositionFactor = RobotUtils.calculateLinearFactor(kGearRatio, pitchDiameter);;
   public static final double kVelocityFactor = RobotUtils.toVelocityPerSecond(kPositionFactor);
 
-  public static final double kPositionTolerance = RobotUtils.inchesToTicks(kErrorToleranceInInches, pitchDiameter, kGearRatio); // Your "close enough" value
+  public static final double kPositionTolerance = RobotUtils.inchesToMeters(kErrorToleranceInInches); // Your "close enough" value
   public static final double kCruiseVelocity = NeoMotorConstants.kFreeSpeedRpm * kMotorSpeed * kVelocityFactor;
 }
