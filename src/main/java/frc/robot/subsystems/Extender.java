@@ -74,6 +74,8 @@ public class Extender extends SubsystemBase {
     SmartDashboard.putNumber("Extender/Leader POS", RobotUtils.metersToInches(leaderPos));
     SmartDashboard.putNumber("Extender/Follow POS", RobotUtils.metersToInches(followPos));
     SmartDashboard.putNumber("Extender/Target POS", RobotUtils.metersToInches(this.m_TargetPOS));
+    SmartDashboard.putNumber("Extender/Leader Current", m_FollowMotor.getOutputCurrent());
+    SmartDashboard.putNumber("Extender/Follow Current", m_FollowMotor.getOutputCurrent());
 
     if (Math.abs(leaderPos - followPos) > ExtenderConstants.kMaxPositionDifference) {
       m_isFaulted = true; // Trip the software breaker

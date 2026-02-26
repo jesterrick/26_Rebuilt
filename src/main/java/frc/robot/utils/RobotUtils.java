@@ -4,6 +4,8 @@
 
 package frc.robot.utils;
 
+import frc.robot.constants.NeoMotorConstants;
+
 public class RobotUtils {
 
     /**
@@ -40,5 +42,9 @@ public class RobotUtils {
 
     public static double metersToInches(double meters) {
         return meters / 0.0254;
+    }
+
+    public static double inchesToTicks(double inches, double drumDiameter, double gearRatio) {
+        return (NeoMotorConstants.kTicksPerRotation * gearRatio) / (Math.PI * drumDiameter);
     }
 }

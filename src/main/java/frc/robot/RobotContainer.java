@@ -51,6 +51,7 @@ public class RobotContainer {
   JoystickButton b_Launcher = new JoystickButton(m_operatorJoystick, OIConstants.kLauncherButton);
   JoystickButton b_LauncherIdleOn = new JoystickButton(m_operatorJoystick, OIConstants.kLauncherIdleOnButton);
   JoystickButton b_LauncherIdleOff = new JoystickButton(m_operatorJoystick, OIConstants.kLauncherIdleOffButton);
+  JoystickButton b_HomeExtender = new JoystickButton(m_operatorJoystick, OIConstants.kExtenderHomeButton);
 
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
