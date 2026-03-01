@@ -18,7 +18,7 @@ public class LauncherConstants {
 
   public static final double kLauncherIdleSpeed = 8.0; // ~480 RPM
   public static final double kMinLaunchSpeed = 25.0; // 1500 RPM
-  public static final double kMaxLaunchSpeed = 75.0; // 4500 RPM
+  public static final double kMaxLaunchSpeed = 55.0; // 4500 RPM (need to change)
   public static final double kTolerance = 3.0; // ~180 RPM tolerance
 
   /* Fixed Hardware Configs */

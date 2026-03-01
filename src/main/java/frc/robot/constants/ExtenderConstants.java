@@ -5,22 +5,22 @@ import frc.robot.utils.RobotUtils;
 public class ExtenderConstants {
 
   /* Motor Control Configs */
-  public static final double kMotorSpeed = 0.15;
-  public static final double kP = 0.05;
+  public static final double kMotorSpeed = 0.2;
+  public static final double kP = 0.07;
   public static final double kI = 0.00;
   public static final double kD = 0.05;
   public static final double kV = 0.05;
-  public static final double kS = 0.15;
+  public static final double kS = 0.2;
   public static final double kA = 0.05;
   public static final double kMaxAccel = 7.0;
 
-  public static final double kAllowedError = RobotUtils.inchesToMeters(0.1);
+  public static final double kAllowedError = RobotUtils.inchesToMeters(0.5);
 
   public static final double kMaxPositionDifference = RobotUtils.inchesToMeters(1);
 
   public static final double kExtendOutTarget = RobotUtils.inchesToMeters(11.3);
 
-  public static final double kErrorToleranceInInches = 0.2;
+  public static final double kErrorToleranceInInches = 0.1;
 
   /* Fixed Hardware Configs */
 

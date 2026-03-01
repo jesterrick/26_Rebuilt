@@ -95,7 +95,10 @@ public class Extender extends SubsystemBase {
         this.m_TargetPOS = position;
       }
     })
-        .until(() -> m_isFaulted)
+        .until(() -> m_isFaulted ||
+          Math.abs(m_LeaderEncoder.getPosition() - position) < ExtenderConstants.kPositionTolerance)
+        .withTimeout(3.0)
+        .finallyDo((interrupted) -> stop())
         .withName("ExtenderTo" + position);
   }
 

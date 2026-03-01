@@ -5,6 +5,7 @@
 package frc.robot.configs;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import frc.robot.constants.LauncherConstants;
@@ -30,5 +31,7 @@ public class LauncherConfigs {
     config.Voltage.PeakReverseVoltage = 0.0;
 
     config.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+
+    config.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
   }
 }
