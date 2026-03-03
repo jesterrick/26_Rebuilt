@@ -48,7 +48,7 @@ public class Extender extends SubsystemBase {
 
     // Configure motor controllers (no encoder config needed for SparkMax)
     SparkMaxConfig leaderConfig = new SparkMaxConfig().apply(ExtenderConfigs.config);
-    leaderConfig.inverted(true);
+    leaderConfig.inverted(false);
     this.m_LeaderMotor.configure(leaderConfig, ResetMode.kResetSafeParameters,
         PersistMode.kPersistParameters);
 
@@ -71,11 +71,15 @@ public class Extender extends SubsystemBase {
     double leaderPos = this.m_LeaderEncoder.getPosition();
     double followPos = this.m_FollowEncoder.getPosition();
 
+    SmartDashboard.putBoolean("Extender/Faulted", m_isFaulted);
     SmartDashboard.putNumber("Extender/Leader POS", RobotUtils.metersToInches(leaderPos));
     SmartDashboard.putNumber("Extender/Follow POS", RobotUtils.metersToInches(followPos));
     SmartDashboard.putNumber("Extender/Target POS", RobotUtils.metersToInches(this.m_TargetPOS));
     SmartDashboard.putNumber("Extender/Leader Current", m_FollowMotor.getOutputCurrent());
     SmartDashboard.putNumber("Extender/Follow Current", m_FollowMotor.getOutputCurrent());
+    SmartDashboard.putNumber("Extender/Position Tolerace", ExtenderConstants.kPositionTolerance);
+    SmartDashboard.putNumber("Extender/CruiseVelocity", ExtenderConstants.kCruiseVelocity);
+    SmartDashboard.putNumber("Extender/MaxAccel", ExtenderConstants.kMaxAccel);
 
     if (Math.abs(leaderPos - followPos) > ExtenderConstants.kMaxPositionDifference) {
       m_isFaulted = true; // Trip the software breaker
@@ -91,13 +95,14 @@ public class Extender extends SubsystemBase {
   private Command goToPosition(double position) {
     return this.run(() -> {
       if (!m_isFaulted) {
-        this.m_LeaderController.setSetpoint(position, ControlType.kMAXMotionPositionControl);
+        //this.m_LeaderController.setSetpoint(position, ControlType.kMAXMotionPositionControl);
+        this.m_LeaderController.setSetpoint(position, ControlType.kPosition);
         this.m_TargetPOS = position;
       }
     })
         .until(() -> m_isFaulted ||
           Math.abs(m_LeaderEncoder.getPosition() - position) < ExtenderConstants.kPositionTolerance)
-        .withTimeout(3.0)
+        //.withTimeout(3.0)
         .finallyDo((interrupted) -> stop())
         .withName("ExtenderTo" + position);
   }

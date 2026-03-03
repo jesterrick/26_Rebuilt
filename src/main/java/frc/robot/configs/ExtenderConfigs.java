@@ -8,6 +8,7 @@ import com.revrobotics.spark.FeedbackSensor;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.MAXMotionConfig.MAXMotionPositionMode;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.ClosedLoopSlot;
 
 import frc.robot.constants.ExtenderConstants;
 import frc.robot.constants.GlobalConstants;
@@ -24,7 +25,7 @@ public class ExtenderConfigs {
     config.closedLoop
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
         .pid(ExtenderConstants.kP, ExtenderConstants.kI, ExtenderConstants.kD)
-        .allowedClosedLoopError(ExtenderConstants.kPositionTolerance, com.revrobotics.spark.ClosedLoopSlot.kSlot0);
+        .allowedClosedLoopError(ExtenderConstants.kPositionTolerance, ClosedLoopSlot.kSlot0);
 
     config.closedLoop.feedForward
         .kV(ExtenderConstants.kV)
@@ -49,6 +50,6 @@ public class ExtenderConfigs {
         .voltageCompensation(GlobalConstants.kMedVoltageCompensation)
         .smartCurrentLimit(ExtenderConstants.kCurrentLimit);
 
-    config.idleMode(IdleMode.kBrake);
+    config.idleMode(IdleMode.kCoast);
   }
 }

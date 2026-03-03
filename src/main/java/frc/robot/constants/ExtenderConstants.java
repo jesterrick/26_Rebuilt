@@ -5,20 +5,20 @@ import frc.robot.utils.RobotUtils;
 public class ExtenderConstants {
 
   /* Motor Control Configs */
-  public static final double kMotorSpeed = 0.2;
-  public static final double kP = 0.07;
+  public static final double kMotorSpeed = 1.0;
+  public static final double kP = 0.8;
   public static final double kI = 0.00;
-  public static final double kD = 0.05;
-  public static final double kV = 0.05;
-  public static final double kS = 0.2;
-  public static final double kA = 0.05;
-  public static final double kMaxAccel = 7.0;
+  public static final double kD = 0.0;
+  public static final double kV = 0.7;
+  public static final double kS = 0.6;
+  public static final double kA = 0.6;
+  public static final double kMaxAccel = 60.0;
 
   public static final double kAllowedError = RobotUtils.inchesToMeters(0.5);
 
   public static final double kMaxPositionDifference = RobotUtils.inchesToMeters(1);
 
-  public static final double kExtendOutTarget = RobotUtils.inchesToMeters(11.3);
+  public static final double kExtendOutTarget = RobotUtils.inchesToMeters(12.0);
 
   public static final double kErrorToleranceInInches = 0.1;
 
@@ -26,7 +26,7 @@ public class ExtenderConstants {
 
   public static final int kCurrentLimit = GlobalConstants.kMediumCurrentLimit;
 
-  public static final double kGearRatio = 1.0;
+  public static final double kGearRatio = 36.0;
 
   private static final double pitchDiameter = 2.14;
 
@@ -34,5 +34,6 @@ public class ExtenderConstants {
   public static final double kVelocityFactor = RobotUtils.toVelocityPerSecond(kPositionFactor);
 
   public static final double kPositionTolerance = RobotUtils.inchesToMeters(kErrorToleranceInInches); // Your "close enough" value
-  public static final double kCruiseVelocity = NeoMotorConstants.kFreeSpeedRpm * kMotorSpeed * kVelocityFactor;
+  //public static final double kCruiseVelocity = NeoMotorConstants.kFreeSpeedRpm * kMotorSpeed * kVelocityFactor;
+  public static final double kCruiseVelocity = 4.0;
 }
