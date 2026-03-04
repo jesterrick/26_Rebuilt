@@ -95,6 +95,11 @@ public class RobotContainer {
       .and(() -> RobotHealth.isHealthy("Extender Follower"))
       .onTrue(m_Extender.fullExtend());
     
+    this.b_HomeExtender
+      .and(() -> RobotHealth.isHealthy("Extender Leader"))
+      .and(() -> RobotHealth.isHealthy("Extender Follower"))
+      .onTrue(m_Extender.home());
+
      // turn on the intake motor to pick up the fuel cells
     this.b_IntakeReceive
       .and(() -> RobotHealth.isHealthy("Intake"))
