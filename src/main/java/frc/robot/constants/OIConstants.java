@@ -15,6 +15,7 @@ public class OIConstants {
     public static final double kDriveDeadband = 0.1;
 
     /** Button ID for the intake mechanism to receive game pieces. */
+<<<<<<< Updated upstream
     public static final int kIntakeReceiveButton = 5;
     /** Button ID for the intake mechanism to eject game pieces. */
     public static final int kIntakeEjectButton = 6;
@@ -24,6 +25,20 @@ public class OIConstants {
     public static final int kExtenderOutButton = 4;
     /** Button ID for retracting a mechanism inwards. */
     public static final int kExtenderInButton = 3;
+=======
+    public static final int kIntakeReceiveButton = 4;
+    
+    public static final int kOrientRobot = 1;
+    public static final int kAlignRobot = 2;
+
+    public static final int kToggleDriveMode = 5;
+
+    public static final int kSwitchLaunchMode = 5; 
+
+    /** Button ID to home or reset the extender mechanism. */
+    public static final int kExtenderHomeButton = 8;
+    
+>>>>>>> Stashed changes
     /** Button ID to activate the launcher's idle speed. */
     public static final int kLauncherIdleOnButton = 16;
     /** Button ID to deactivate the launcher's idle speed. */

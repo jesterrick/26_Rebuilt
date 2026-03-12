@@ -8,7 +8,6 @@ import frc.robot.configs.ExtenderConfigs;
 import frc.robot.constants.CanIdConstants;
 import frc.robot.constants.ExtenderConstants;
 import frc.robot.constants.GlobalConstants;
-import frc.robot.utils.RobotUtils;
 
 import com.revrobotics.spark.SparkLowLevel;
 import com.revrobotics.spark.SparkMax;
@@ -19,7 +18,9 @@ import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.RelativeEncoder;
 
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.math.util.Units;
+import frc.robot.utils.LoggedTunableNumber;
+import frc.robot.utils.Telemetry;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
@@ -34,6 +35,16 @@ public class Extender extends SubsystemBase {
 
   private double m_TargetPOS = 0.0;
   private boolean m_isFaulted = false;
+
+  private final LoggedTunableNumber kP_Tuning = new LoggedTunableNumber("Extender/kP", 0.85);
+  private final LoggedTunableNumber kS_Tuning = new LoggedTunableNumber("Extender/kS", ExtenderConstants.kS);
+  private final LoggedTunableNumber kV_Tuning = new LoggedTunableNumber("Extender/kV", ExtenderConstants.kV);
+  private final LoggedTunableNumber kA_Tuning = new LoggedTunableNumber("Extender/kA", ExtenderConstants.kA);
+  
+  private final LoggedTunableNumber kCruiseVelocity_Tuning = new LoggedTunableNumber("Extender/CruiseVelocity", ExtenderConstants.kCruiseVelocity);
+  private final LoggedTunableNumber kMaxAccel_Tuning = new LoggedTunableNumber("Extender/MaxAccel", ExtenderConstants.kMaxAccel);
+  
+  private final LoggedTunableNumber maxExtensionInches = new LoggedTunableNumber("Extender/MaxExtensionInches", Units.metersToInches(ExtenderConstants.kExtendOutTarget));
 
   /** Creates a new Extender. */
   public Extender() {
@@ -64,22 +75,48 @@ public class Extender extends SubsystemBase {
   @Override
   public void periodic() {
 
+    // Update tuning values if they changed on the dashboard
+    LoggedTunableNumber.ifChanged(hashCode(), () -> {
+      SparkMaxConfig config = new SparkMaxConfig().apply(ExtenderConfigs.config);
+      config.closedLoop.p(kP_Tuning.get());
+      
+      // Update FeedForward
+      config.closedLoop.feedForward.kS(kS_Tuning.get());
+      config.closedLoop.feedForward.kV(kV_Tuning.get());
+      config.closedLoop.feedForward.kA(kA_Tuning.get());
+
+      config.closedLoop.maxMotion.cruiseVelocity(kCruiseVelocity_Tuning.get());
+      config.closedLoop.maxMotion.maxAcceleration(kMaxAccel_Tuning.get());
+      
+      m_LeaderMotor.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+      m_FollowMotor.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+    }, kP_Tuning, kS_Tuning, kV_Tuning, kA_Tuning, kCruiseVelocity_Tuning, kMaxAccel_Tuning);
+
     double leaderPos = this.m_LeaderEncoder.getPosition();
     double followPos = this.m_FollowEncoder.getPosition();
 
-    SmartDashboard.putBoolean("Extender/Faulted", !m_isFaulted);
-    SmartDashboard.putNumber("Extender/Leader POS", RobotUtils.metersToInches(leaderPos));
-    SmartDashboard.putNumber("Extender/Follow POS", RobotUtils.metersToInches(followPos));
-    SmartDashboard.putNumber("Extender/Target POS", RobotUtils.metersToInches(this.m_TargetPOS));
-    SmartDashboard.putNumber("Extender/Leader Current", m_FollowMotor.getOutputCurrent());
-    SmartDashboard.putNumber("Extender/Follow Current", m_FollowMotor.getOutputCurrent());
-    SmartDashboard.putNumber("Extender/Position Tolerace", ExtenderConstants.kPositionTolerance);
-    SmartDashboard.putNumber("Extender/CruiseVelocity", ExtenderConstants.kCruiseVelocity);
-    SmartDashboard.putNumber("Extender/MaxAccel", ExtenderConstants.kMaxAccel);
+    Telemetry.putBoolean("Extender/Faulted", !m_isFaulted);
+    Telemetry.putDebugNumber("Extender/Leader POS", Units.metersToInches(leaderPos));
+    Telemetry.putDebugNumber("Extender/Follow POS", Units.metersToInches(followPos));
+    Telemetry.putDebugNumber("Extender/Target POS", Units.metersToInches(this.m_TargetPOS));
+    Telemetry.putDebugNumber("Extender/Leader Current", m_FollowMotor.getOutputCurrent());
+    Telemetry.putDebugNumber("Extender/Follow Current", m_FollowMotor.getOutputCurrent());
+    Telemetry.putDebugNumber("Extender/Position Tolerace", ExtenderConstants.kPositionTolerance);
+    Telemetry.putDebugNumber("Extender/CruiseVelocity", ExtenderConstants.kCruiseVelocity);
+    Telemetry.putDebugNumber("Extender/MaxAccel", ExtenderConstants.kMaxAccel);
 
     if (m_isFaulted) {
       stop(); // Keep them stopped if we are already in a fault state
       return;
+    }
+
+    // High current + low velocity = stall
+    boolean leaderStalled = m_LeaderMotor.getOutputCurrent() > ExtenderConstants.kCurrentLimit && Math.abs(m_LeaderEncoder.getVelocity()) < 0.01;
+    boolean followStalled = m_FollowMotor.getOutputCurrent() > ExtenderConstants.kCurrentLimit && Math.abs(m_FollowEncoder.getVelocity()) < 0.01;
+
+    if (leaderStalled || followStalled) {
+      m_isFaulted = true;
+      stopMotors();
     }
 
     if (Math.abs(leaderPos - followPos) > ExtenderConstants.kMaxPositionDifference) {
@@ -119,7 +156,7 @@ public class Extender extends SubsystemBase {
   }
 
   public Command fullExtend() {
-    return goToPosition(ExtenderConstants.kExtendOutTarget)
+    return goToPosition(Units.inchesToMeters(maxExtensionInches.get()))
         .withName("ExtenderOut");
   }
 
@@ -146,6 +183,44 @@ public class Extender extends SubsystemBase {
         .withName("ExtenderHoming");
   }
 
+<<<<<<< Updated upstream
+=======
+  public Command followJoystick(DoubleSupplier speedSupplier) {
+    return this.run(() -> {
+      double speed = speedSupplier.getAsDouble();
+      // Apply a small deadband so it doesn't hum when you aren't touching it
+      if (Math.abs(speed) < 0.1 || m_isFaulted) {
+        stopMotors();
+      } else {
+        double manualSpeed = speed * ExtenderConstants.kMotorSpeed;
+        
+        // Safety: Don't allow driving forward if already at/past max extension
+        if (manualSpeed > 0 && m_LeaderEncoder.getPosition() >= Units.inchesToMeters(maxExtensionInches.get())) {
+          manualSpeed = 0;
+        }
+        // Safety: Don't allow driving backward if already at/past stow
+        if (manualSpeed < 0 && m_LeaderEncoder.getPosition() <= 0.0) {
+          manualSpeed = 0;
+        }
+
+        m_LeaderMotor.set(manualSpeed);
+        m_FollowMotor.set(manualSpeed);
+      }
+    }).withName("ExtenderManual");
+  }
+
+  public Command stopCommand() {
+    return this.runOnce(this::stopMotors).withName("ExtenderStop");
+  }
+
+  public Command clearFaultsCommand() {
+    return this.runOnce(() -> {
+      this.m_isFaulted = false;
+      this.stopMotors();
+    }).withName("ExtenderClearFaults");
+  }
+
+>>>>>>> Stashed changes
   public SparkMax getLeader() {
     return m_LeaderMotor;
   }

@@ -1,6 +1,8 @@
 package frc.robot.constants;
 
 import frc.robot.utils.RobotUtils;
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.math.util.Units;
 
 public class LauncherConstants {
 
@@ -16,10 +18,19 @@ public class LauncherConstants {
 
   public static final double kAllowedError = 0.1;
 
+<<<<<<< Updated upstream
   public static final double kLauncherIdleSpeed = 8.0; // ~480 RPM
   public static final double kMinLaunchSpeed = 25.0; // 1500 RPM
   public static final double kMaxLaunchSpeed = 55.0; // 4500 RPM (need to change)
   public static final double kTolerance = 3.0; // ~180 RPM tolerance
+=======
+  public static final double kLauncherIdleSpeed = 10.0; // RPS
+  public static final double kMinLaunchSpeed = 45.0; // RPS
+  public static final double kMaxLaunchSpeed = 75.0; // RPS
+  public static final double kTolerance = 3.0; // RPS tolerance
+
+  public static final double kAutoLaunchSpeed = 50.0; // RPS
+>>>>>>> Stashed changes
 
   /* Fixed Hardware Configs */
 
@@ -30,5 +41,15 @@ public class LauncherConstants {
   public static final double kVelocityFactor = RobotUtils.toVelocityPerSecond(kPositionFactor);
 
   public static final int kCurrentLimit = GlobalConstants.kMediumCurrentLimit;
+
+  public static final InterpolatingDoubleTreeMap kShotMap = new InterpolatingDoubleTreeMap();
+
+  static {
+    // format: kShotMap.put(distanceInMeters, speedInRPS);
+    kShotMap.put(Units.inchesToMeters(24.0), 45.0);
+    kShotMap.put(Units.inchesToMeters(48.0), 52.0);
+    kShotMap.put(Units.inchesToMeters(72.0), 60.0);
+    kShotMap.put(Units.inchesToMeters(96.0), 70.0);
+  }
 
 }

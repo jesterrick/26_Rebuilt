@@ -5,6 +5,7 @@
 package frc.robot.utils;
 
 import frc.robot.constants.NeoMotorConstants;
+import edu.wpi.first.math.util.Units;
 
 public class RobotUtils {
 
@@ -14,7 +15,7 @@ public class RobotUtils {
      */
     public static double calculateLinearFactor(double gearRatio, double drumDiameter) {
         // Circumference (PI * D) divided by Gear Ratio
-        return (Math.PI * inchesToMeters(drumDiameter)) / gearRatio;
+        return (Math.PI * Units.inchesToMeters(drumDiameter)) / gearRatio;
     }
 
     /**
@@ -34,14 +35,6 @@ public class RobotUtils {
      */
     public static double calculateDistance(double velocity, double time) {
         return velocity * time;
-    }
-
-    public static double inchesToMeters(double inches) {
-        return inches * 0.0254;
-    }
-
-    public static double metersToInches(double meters) {
-        return meters / 0.0254;
     }
 
     public static double inchesToTicks(double inches, double drumDiameter, double gearRatio) {

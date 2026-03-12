@@ -1,6 +1,6 @@
 package frc.robot.constants;
 
-import frc.robot.utils.RobotUtils;
+import edu.wpi.first.math.util.Units;
 
 public class MaxSwerveConstants {
     // The MAXSwerve module can be configured with one of three pinion gears: 12T,
@@ -11,7 +11,7 @@ public class MaxSwerveConstants {
     // Calculations required for driving motor conversion factors and feed forward
     public static final double kDrivingMotorFreeSpeedRps = NeoMotorConstants.kFreeSpeedRpm / 60;
     public static final double kWheelDiameterInches = 3;
-    public static final double kWheelDiameterMeters = RobotUtils.inchesToMeters(kWheelDiameterInches);
+    public static final double kWheelDiameterMeters = Units.inchesToMeters(kWheelDiameterInches);
     public static final double kWheelCircumferenceMeters = kWheelDiameterInches * Math.PI;
     // 45 teeth on the wheel's bevel gear, 22 teeth on the first-stage spur gear, 15
     // teeth on the bevel pinion

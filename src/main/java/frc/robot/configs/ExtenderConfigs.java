@@ -39,12 +39,10 @@ public class ExtenderConfigs {
         .allowedProfileError(ExtenderConstants.kAllowedError);
 
     config.softLimit
-    .forwardSoftLimitEnabled(false)
-    .reverseSoftLimitEnabled(false);
-        //.forwardSoftLimitEnabled(true)
-        //.forwardSoftLimit(ExtenderConstants.kExtendOutTarget)
-        //.reverseSoftLimitEnabled(true)
-        //.reverseSoftLimit(0.0);
+        .forwardSoftLimitEnabled(true)
+        .forwardSoftLimit(ExtenderConstants.kExtendOutTarget)
+        .reverseSoftLimitEnabled(true)
+        .reverseSoftLimit(0.0);
 
     config
         .voltageCompensation(GlobalConstants.kMedVoltageCompensation)

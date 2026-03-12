@@ -6,7 +6,7 @@ public class IntakeConstants {
     
     /* Motor Control Configs */
 
-    public static final double kMotorSpeed = 0.35;
+    public static final double kMotorSpeed = 0.45;
     public static final double kP = 0.1;
     public static final double kI = 0.00;
     public static final double kD = 0.00;

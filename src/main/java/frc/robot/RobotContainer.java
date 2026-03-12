@@ -11,17 +11,17 @@ import frc.robot.subsystems.Feeder;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Launcher;
 import frc.robot.utils.RobotHealth;
+import frc.robot.utils.Telemetry;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.revrobotics.spark.SparkMax;
 
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.Notifier;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 
 /**
@@ -37,7 +37,7 @@ public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   public DriveSubsystem m_RobotDrive = new DriveSubsystem();
   public Intake m_Intake = new Intake();
-  public Launcher m_Launcher = new Launcher();
+  public Launcher m_Launcher = new Launcher(m_RobotDrive);
   public Extender m_Extender = new Extender();
   public Feeder m_Feeder = new Feeder();
 
@@ -52,11 +52,24 @@ public class RobotContainer {
   JoystickButton b_LauncherIdleOn = new JoystickButton(m_operatorJoystick, OIConstants.kLauncherIdleOnButton);
   JoystickButton b_LauncherIdleOff = new JoystickButton(m_operatorJoystick, OIConstants.kLauncherIdleOffButton);
   JoystickButton b_HomeExtender = new JoystickButton(m_operatorJoystick, OIConstants.kExtenderHomeButton);
+  JoystickButton b_OrientRobot = new JoystickButton(m_driverJoystick, OIConstants.kOrientRobot);
+  JoystickButton b_AlignRobot = new JoystickButton(m_driverJoystick, OIConstants.kAlignRobot);
+  JoystickButton b_LaunchModeToggle = new JoystickButton(m_operatorJoystick, OIConstants.kSwitchLaunchMode);
+  JoystickButton b_ToggleDriveMode = new JoystickButton(m_driverJoystick, OIConstants.kToggleDriveMode);
+
+  JoystickButton b_EmergencyStop = new JoystickButton(m_operatorJoystick, 2); // B button
+  JoystickButton b_ClearExtenderFaults = new JoystickButton(m_operatorJoystick, 3); // X button
+
+  boolean fieldRelative = true;
+  boolean useVisionForLaunch = true;
 
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
   public RobotContainer() {
+    // Enable debug telemetry by default.
+    Telemetry.setDebugEnabled(true);
+
     // Configure the trigger bindings
     configureBindings();
 
@@ -65,24 +78,22 @@ public class RobotContainer {
             () -> m_driverJoystick.getY(),
             () -> m_driverJoystick.getX(),
             () -> m_driverJoystick.getZ(),
-            () -> false));
+            () -> fieldRelative));
   }
 
   /**
-   * Use this method to define your trigger->command mappings. Triggers can be
-   * created via the
-   * {@link Trigger#Trigger(java.util.function.BooleanSupplier)} constructor with
-   * an arbitrary
-   * predicate, or via the named factories in {@link
-   * edu.wpi.first.wpilibj2.command.button.CommandGenericHID}'s subclasses for
-   * {@link
-   * CommandXboxController
-   * Xbox}/{@link edu.wpi.first.wpilibj2.command.button.CommandPS4Controller
-   * PS4} controllers or
-   * {@link edu.wpi.first.wpilibj2.command.button.CommandJoystick Flight
-   * joysticks}.
+   * Use this method to define your trigger->command mappings.
    */
   private void configureBindings() {
+
+    this.b_EmergencyStop.onTrue(stopAll());
+    this.b_ClearExtenderFaults.onTrue(m_Extender.clearFaultsCommand());
+
+    this.b_ToggleDriveMode.onTrue(Commands.runOnce(() -> fieldRelative = !fieldRelative));
+
+    this.b_LaunchModeToggle.onTrue(
+        Commands.runOnce(() -> useVisionForLaunch = !useVisionForLaunch));
+
     // bring in the extender and stop the intake
     this.b_ExtendIn
       .and(() -> RobotHealth.isHealthy("Extender Leader"))
@@ -91,10 +102,25 @@ public class RobotContainer {
 
     // send the extender out
     this.b_ExtendOut
+<<<<<<< Updated upstream
       .and(() -> RobotHealth.isHealthy("Extender Leader"))
       .and(() -> RobotHealth.isHealthy("Extender Follower"))
       .onTrue(m_Extender.fullExtend());
     
+=======
+        .and(() -> RobotHealth.isHealthy("Extender Leader"))
+        .and(() -> RobotHealth.isHealthy("Extender Follower"))
+        .onTrue(m_Extender.fullExtend());
+
+    this.b_ExtendStopFollow
+        .and(() -> RobotHealth.isHealthy("Extender Leader"))
+        .and(() -> RobotHealth.isHealthy("Extender Follower"))
+        .onTrue(m_Extender.stopCommand()) // Stop immediately when pressed
+        .whileTrue(m_Extender.followJoystick(
+            () -> m_driverJoystick.getX() // Pass the joystick supplier
+        ));
+
+>>>>>>> Stashed changes
     this.b_HomeExtender
       .and(() -> RobotHealth.isHealthy("Extender Leader"))
       .and(() -> RobotHealth.isHealthy("Extender Follower"))
@@ -117,8 +143,9 @@ public class RobotContainer {
       .and(() -> RobotHealth.isHealthy("Feeder"))
       .onTrue(m_Launcher.off());
 
-    // set launcher speed based on the slider
+    // Unified Launch Command: Align, Spool based on distance, and Feed when ready
     this.b_Launcher
+<<<<<<< Updated upstream
       .and(() -> RobotHealth.isHealthy("Launcher"))
       .and(() -> RobotHealth.isHealthy("Feeder"))
       .whileTrue(
@@ -127,11 +154,30 @@ public class RobotContainer {
                 // turn on the feeder after launcher has reached speed
                 new WaitUntilCommand(m_Launcher::atSpeed)
                     .andThen(m_Feeder.feedLauncher())));
+=======
+        .and(() -> RobotHealth.isHealthy("Launcher"))
+        .and(() -> RobotHealth.isHealthy("Feeder"))
+        .whileTrue(
+            m_Launcher.align(() -> m_driverJoystick.getY(), () -> m_driverJoystick.getX(), () -> fieldRelative)
+                .alongWith(Commands.either(
+                    m_Launcher.launchWithVision(), // Runs if useVisionForLaunch is true
+                    m_Launcher.launchWithJoystick(() -> m_operatorJoystick.getRawAxis(5)), // Runs if useVisionForLaunch
+                                                                                           // is false
+                    () -> useVisionForLaunch // The condition to check
+                ))
+                .alongWith(
+                    m_Feeder.feedLauncher().onlyIf(() -> !useVisionForLaunch || (m_Launcher.atSpeed() && m_Launcher.isAligned()))));
+
+    // orient the robot to the field
+    this.b_OrientRobot.onTrue(m_RobotDrive.orient());
+
+    this.b_AlignRobot.whileTrue(m_Launcher.align(() -> m_driverJoystick.getY(), () -> m_driverJoystick.getX(), () -> fieldRelative));
+
+>>>>>>> Stashed changes
   }
 
   public void startHealthChecks() {
     // 0.5 means it checks every half-second.
-    // Fast enough to see a failure, slow enough to not kill your CAN bus.
     healthCheckNotifier.startPeriodic(0.5);
   }
 
@@ -150,32 +196,71 @@ public class RobotContainer {
     checkMotor(m_Intake.getMotor(), "Intake");
     checkMotor(m_Feeder.getMotor(), "Feeder");
     checkMotor(m_Launcher.getMotor(), "Launcher");
+<<<<<<< Updated upstream
     
     // This sends one big string like "{Extender Leader=OK, Feeder=DISCONNECTED}"
     SmartDashboard.putString("Health/Report", RobotHealth.getReport());
     
+=======
+
+>>>>>>> Stashed changes
     // This sends the big green/red light signal
-    SmartDashboard.putBoolean("Health/All Systems Nominal", RobotHealth.isEverythingOk());
+    Telemetry.putBoolean("Health/All Systems Good", RobotHealth.isEverythingOk());
   });
 
   private void checkMotor(SparkMax motor, String name) {
+    // 1. Connection check (firmware version 0 means not reachable)
     if (motor.getFirmwareVersion() == 0) {
-      RobotHealth.updateStatus(name, "DISCONNECTED");
+      updateMotorStatus(name, motor.getDeviceId(), "ERROR (DISCONNECTED)");
+      return;
+    }
+
+    // 2. Fault check
+    var faults = motor.getFaults();
+    if (motor.hasActiveFault()) {
+      String faultDescription = "ERROR (";
+      if (faults.sensor) faultDescription += "SENSOR ";
+      if (faults.temperature) faultDescription += "HOT ";
+      faultDescription += ")";
+      updateMotorStatus(name, motor.getDeviceId(), faultDescription);
     } else {
-      RobotHealth.updateStatus(name, "OK");
+      updateMotorStatus(name, motor.getDeviceId(), "OK");
     }
   }
 
   private void checkMotor(TalonFX motor, String name) {
-    // In Phoenix 6, we check the version of the firmware
-    // If the device isn't on the bus, this will return an error code
+    // 1. Connection check
     var version = motor.getVersion();
-
     if (!version.getStatus().isOK()) {
-      RobotHealth.updateStatus(name, "DISCONNECTED/ERROR");
-    } else {
-      RobotHealth.updateStatus(name, "OK");
+      updateMotorStatus(name, motor.getDeviceID(), "ERROR (DISCONNECTED)");
+      return;
     }
+
+    // 2. Thermal check
+    var temp = motor.getDeviceTemp();
+    if (temp.getValueAsDouble() > 70.0) {
+      updateMotorStatus(name, motor.getDeviceID(), "WARNING (OVERHEATING)");
+    } else {
+      updateMotorStatus(name, motor.getDeviceID(), "OK");
+    }
+  }
+
+  private void updateMotorStatus(String name, int motorId, String status) {
+    RobotHealth.updateStatus(name, status);
+    Telemetry.putString("Health/" + name + " (" + motorId + ")", status);
+  }
+
+  /**
+   * Stops all mechanisms on the robot immediately.
+   */
+  public Command stopAll() {
+    return Commands.parallel(
+        m_RobotDrive.driveCommand(() -> 0, () -> 0, () -> 0, () -> false),
+        m_Intake.stop(),
+        m_Launcher.off(),
+        m_Extender.stopCommand(),
+        m_Feeder.feedLauncher().withTimeout(0)
+    ).withName("EmergencyStop");
   }
 
   /**
@@ -184,7 +269,11 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-    // An example command will be run in autonomous
-    return null;
+    return new ParallelCommandGroup(
+        m_Extender.fullExtend(),
+        m_Launcher.launchWithVision()
+            .alongWith(
+                new WaitUntilCommand(m_Launcher::atSpeed)
+                    .andThen(m_Feeder.feedLauncher().withTimeout(10.0))));
   }
 }

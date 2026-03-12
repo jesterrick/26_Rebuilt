@@ -92,18 +92,25 @@ public class MAXSwerveModule {
    * @param desiredState Desired state with speed and angle.
    */
   public void setDesiredState(SwerveModuleState desiredState) {
-    // 1. Apply the chassis angular offset to the desired state to get the target absolute position
-    SwerveModuleState correctedDesiredState = new SwerveModuleState();
-    correctedDesiredState.speedMetersPerSecond = desiredState.speedMetersPerSecond;
-    correctedDesiredState.angle = desiredState.angle.plus(Rotation2d.fromRadians(m_chassisAngularOffset));
+    // 1. If we are asking to stop, don't snap the wheels back to zero
+    if (Math.abs(desiredState.speedMetersPerSecond) < 0.01) {
+      m_drivingClosedLoopController.setSetpoint(0, ControlType.kVelocity);
+      // Keep current angle
+      return;
+    }
 
-    // 2. Get the current absolute rotation from the turning encoder
+    // 2. Apply the chassis angular offset (Better to use the constructor)
+    SwerveModuleState correctedDesiredState = new SwerveModuleState(
+        desiredState.speedMetersPerSecond,
+        desiredState.angle.plus(Rotation2d.fromRadians(m_chassisAngularOffset)));
+
+    // 2. Get current rotation
     Rotation2d currentRotation = new Rotation2d(m_turningEncoder.getPosition());
 
-    // 3. Optimize the state to avoid spinning more than 90 degrees
-    correctedDesiredState = SwerveModuleState.optimize(correctedDesiredState, currentRotation);
+    // 3. NEW INSTANCE OPTIMIZATION (Fixes deprecation)
+    correctedDesiredState.optimize(currentRotation);
 
-    // 4. Scale speed by cosine of angle error for smoother driving
+    // 4. Scale speed by cosine of angle error
     correctedDesiredState.cosineScale(currentRotation);
 
     // 5. Command the SPARK MAX controllers
@@ -118,11 +125,11 @@ public class MAXSwerveModule {
     m_drivingEncoder.setPosition(0);
   }
 
-  public SparkMax getDrive(){
+  public SparkMax getDrive() {
     return this.m_DrivingMotor;
   }
 
-  public SparkMax getTurn(){
+  public SparkMax getTurn() {
     return this.m_TurningMotor;
   }
 }

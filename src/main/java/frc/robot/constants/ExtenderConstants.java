@@ -1,6 +1,7 @@
 package frc.robot.constants;
 
 import frc.robot.utils.RobotUtils;
+import edu.wpi.first.math.util.Units;
 
 public class ExtenderConstants {
 
@@ -14,11 +15,15 @@ public class ExtenderConstants {
   public static final double kA = 0.4;
   public static final double kMaxAccel = 12.0;
 
+<<<<<<< Updated upstream
   public static final double kAllowedError = RobotUtils.inchesToMeters(0.5);
+=======
+  public static final double kAllowedError = Units.inchesToMeters(0.2);
+>>>>>>> Stashed changes
 
-  public static final double kMaxPositionDifference = RobotUtils.inchesToMeters(2.0);
+  public static final double kMaxPositionDifference = Units.inchesToMeters(2.0);
 
-  public static final double kExtendOutTarget = RobotUtils.inchesToMeters(12.0);
+  public static final double kExtendOutTarget = Units.inchesToMeters(12.0);
 
   public static final double kErrorToleranceInInches = 0.1;
 
@@ -33,7 +38,7 @@ public class ExtenderConstants {
   public static final double kPositionFactor = RobotUtils.calculateLinearFactor(kGearRatio, pitchDiameter);;
   public static final double kVelocityFactor = RobotUtils.toVelocityPerSecond(kPositionFactor);
 
-  public static final double kPositionTolerance = RobotUtils.inchesToMeters(kErrorToleranceInInches); // Your "close enough" value
+  public static final double kPositionTolerance = Units.inchesToMeters(kErrorToleranceInInches); // Your "close enough" value
   //public static final double kCruiseVelocity = NeoMotorConstants.kFreeSpeedRpm * kMotorSpeed * kVelocityFactor;
   public static final double kCruiseVelocity = 1.5;
 }

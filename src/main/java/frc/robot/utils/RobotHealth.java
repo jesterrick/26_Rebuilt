@@ -14,19 +14,21 @@ public class RobotHealth {
 
     public static void updateStatus(String name, String status) {
         motorStatus.put(name, status);
-        // If any status isn't "OK", the master light goes red
-        allSystemsNominal = motorStatus.values().stream().allMatch(s -> s.equals("OK"));
-    }
-
-    public static String getReport() {
-        return motorStatus.toString(); // Or something prettier for Elastic
+        // All systems nominal if everything is "OK"
+        // Warnings are allowed, but the "Master Good" light only goes off for ERRORS
+        allSystemsNominal = motorStatus.values().stream().noneMatch(s -> s.contains("ERROR"));
     }
 
     public static boolean isHealthy(String name) {
         String status = motorStatus.get(name);
-        // If we haven't checked it yet, assume OK to avoid blocking initial actions,
-        // or return true only if explicitly "OK".
-        return status == null || status.equals("OK");
+        // Returns true if status is either OK or just a WARNING.
+        // We only block commands for "ERROR" status.
+        return status == null || !status.contains("ERROR");
+    }
+
+    public static boolean hasWarning(String name) {
+        String status = motorStatus.get(name);
+        return status != null && status.contains("WARNING");
     }
 
     public static boolean isEverythingOk() {
