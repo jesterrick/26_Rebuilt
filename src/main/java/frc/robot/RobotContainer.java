@@ -18,6 +18,7 @@ import com.revrobotics.spark.SparkMax;
 
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.Notifier;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
@@ -59,7 +60,8 @@ public class RobotContainer {
   JoystickButton b_ToggleDriveMode = new JoystickButton(m_driverJoystick, OIConstants.kToggleDriveMode);
   JoystickButton b_ExtendStopFollow = new JoystickButton(m_operatorJoystick, OIConstants.kExtenderFollowJoystick);
   JoystickButton b_EmergencyStop = new JoystickButton(m_operatorJoystick, OIConstants.kEmergencyStop); // B button
-  JoystickButton b_ClearExtenderFaults = new JoystickButton(m_operatorJoystick, OIConstants.kClearExtenderFaults); // X button
+  JoystickButton b_ClearExtenderFaults = new JoystickButton(m_operatorJoystick, OIConstants.kClearExtenderFaults); // X
+                                                                                                                   // button
 
   boolean fieldRelative = true;
   boolean useVisionForLaunch = true;
@@ -75,7 +77,7 @@ public class RobotContainer {
     configureBindings();
 
     m_RobotDrive.setDefaultCommand(
-            m_RobotDrive.driveCommand(
+        m_RobotDrive.driveCommand(
             () -> m_driverJoystick.getY(),
             () -> m_driverJoystick.getX(),
             () -> m_driverJoystick.getZ(),
@@ -142,16 +144,17 @@ public class RobotContainer {
         .and(() -> RobotHealth.isHealthy("Launcher"))
         .and(() -> RobotHealth.isHealthy("Feeder"))
         .whileTrue(
-            m_Launcher.align(() -> m_driverJoystick.getY(), () -> m_driverJoystick.getX(), () -> fieldRelative)
-                .alongWith(Commands.either(
-                    m_Launcher.launchWithVision(), // Runs if useVisionForLaunch is true
-                    m_Launcher.launchWithJoystick(() -> m_operatorJoystick.getRawAxis(5)), // Runs if useVisionForLaunch
-                                                                                           // is false
-                    () -> useVisionForLaunch // The condition to check
-                ))
+                Commands.either(
+                    m_Launcher.align(() -> m_driverJoystick.getY(), () -> m_driverJoystick.getX(), () -> false)
+                        .alongWith(
+                            m_Launcher.launchWithVision()),
+                    m_Launcher.launchWithJoystick(() -> m_operatorJoystick.getRawAxis(5)),
+                    () -> useVisionForLaunch
+                )
                 .alongWith(
-                    m_Feeder.feedLauncher().onlyIf(() -> !useVisionForLaunch || (m_Launcher.atSpeed() && m_Launcher.isAligned()))));
-
+                    Commands.waitUntil(() -> m_Launcher.atSpeed() && (!useVisionForLaunch || m_Launcher.isAligned()))
+                        .andThen(m_Feeder.feedLauncher())));
+    
     // orient the robot to the field
     this.b_OrientRobot.onTrue(m_RobotDrive.orient());
 
@@ -194,8 +197,10 @@ public class RobotContainer {
     var faults = motor.getFaults();
     if (motor.hasActiveFault()) {
       String faultDescription = "ERROR (";
-      if (faults.sensor) faultDescription += "SENSOR ";
-      if (faults.temperature) faultDescription += "HOT ";
+      if (faults.sensor)
+        faultDescription += "SENSOR ";
+      if (faults.temperature)
+        faultDescription += "HOT ";
       faultDescription += ")";
       updateMotorStatus(name, motor.getDeviceId(), faultDescription);
     } else {
@@ -234,8 +239,7 @@ public class RobotContainer {
         m_Intake.stop(),
         m_Launcher.off(),
         m_Extender.stopCommand(),
-        m_Feeder.feedLauncher().withTimeout(0)
-    ).withName("EmergencyStop");
+        m_Feeder.feedLauncher().withTimeout(0)).withName("EmergencyStop");
   }
 
   /**
@@ -245,12 +249,17 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     return new SequentialCommandGroup(
-      new ParallelCommandGroup(
-        m_Extender.partialExtend(),
-        m_Launcher.launchWithVision()
-            .alongWith(
-                new WaitUntilCommand(m_Launcher::atSpeed)
-                    .andThen(m_Feeder.feedLauncher().withTimeout(10.0)))),
-      m_Extender.fullExtend());
+        new ParallelCommandGroup(
+            m_Extender.partialExtend(),
+            m_Launcher.launchWithVision()
+                .alongWith(
+                    new WaitUntilCommand(m_Launcher::atSpeed)
+                        .andThen(m_Feeder.feedLauncher().withTimeout(10.0)))),
+        m_Extender.fullExtend());
+  }
+
+  public void periodic() {
+    Telemetry.putBoolean("Launcher/Launch With Vision", useVisionForLaunch);
+    Telemetry.putBoolean("Drive/Field Oriented", fieldRelative);
   }
 }

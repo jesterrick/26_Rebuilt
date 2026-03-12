@@ -5,7 +5,7 @@ package frc.robot.constants;
  * These are used for vision processing and autonomous navigation.
  */
 public class AprilTagConstants {
-    public static final int[] kRedHubTags = {8,9,10,11};
+    public static final int[] kRedHubTags = {8,10,11};
     public static final int[] kBlueHubTags = {24,25,26,27};
     public static final int[] kRedTrenchInTags = {1,6};
     public static final int[] kBlueTrenchInTags = {17,22};

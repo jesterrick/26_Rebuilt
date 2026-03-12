@@ -47,7 +47,7 @@ public class Extender extends SubsystemBase {
   
   private final LoggedTunableNumber maxExtensionInches = new LoggedTunableNumber("Extender/MaxExtensionInches", Units.metersToInches(ExtenderConstants.kExtendOutTarget));
   private final LoggedTunableNumber partialExtendInches = new LoggedTunableNumber("Extender/PartialExtendInches", Units.metersToInches(ExtenderConstants.kExtendPartialTarget));
-
+  private final LoggedTunableNumber launcherExtendInches = new LoggedTunableNumber("Extender/LauncherExtendInches", Units.metersToInches(ExtenderConstants.kExtendLaunchTarget));
   /** Creates a new Extender. */
   public Extender() {
 
@@ -165,6 +165,11 @@ public class Extender extends SubsystemBase {
   public Command partialExtend() {
     return goToPosition(Units.inchesToMeters(partialExtendInches.get()))
       .withName("ExtenderPartial");
+  }
+
+  public Command launchExtend() {
+    return goToPosition(Units.inchesToMeters(launcherExtendInches.get()))
+    .withName("ExtenderLaunch");
   }
 
   public Command home() {

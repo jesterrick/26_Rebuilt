@@ -40,8 +40,8 @@ public class Launcher extends SubsystemBase {
   private double m_TY;
   NetworkTable m_Table;
 
-  private final LoggedTunableNumber alignP = new LoggedTunableNumber("Launcher/Align/kP", 0.04);
-  private final LoggedTunableNumber alignD = new LoggedTunableNumber("Launcher/Align/kD", 0.001);
+  private final LoggedTunableNumber alignP = new LoggedTunableNumber("Launcher/Align/kP", 0.02);
+  private final LoggedTunableNumber alignD = new LoggedTunableNumber("Launcher/Align/kD", 0.05);
   private final LoggedTunableNumber mountAngle = new LoggedTunableNumber("Vision/MountAngle", VisionConstants.kMountAngle);
   private final LoggedTunableNumber shotOffset = new LoggedTunableNumber("Launcher/ShotSpeedOffset", 0.0);
   
@@ -102,10 +102,11 @@ public class Launcher extends SubsystemBase {
       m_TYFilter.reset();
     }
 
-    Telemetry.putNumber("Launcher/Distance To Target", getDistanceToTarget());
+    Telemetry.putNumber("Launcher/Distance To Target", Units.metersToInches(getDistanceToTarget()));
     Telemetry.putDebugNumber("Launcher/Current Speed", getActualVelocity());
     Telemetry.putDebugNumber("Launcher/Target Speed", m_TargetSpeed);
     Telemetry.putBoolean("Launcher/At Speed", atSpeed());
+    Telemetry.putBoolean("Launcher/Is Aligned", isAligned());
 
     // Debugging high-frequency vision data
     Telemetry.putDebugNumber("Launcher/Raw TX", m_TX);
@@ -204,19 +205,21 @@ public class Launcher extends SubsystemBase {
       if (m_HasTarget) {
         rotationSpeed = m_AlignPID.calculate(m_TX, 0);
 
-        // Add a small feed-forward/minimum to overcome friction if not at setpoint
+        // Only apply feed-forward when far from setpoint to overcome static friction
         if (!m_AlignPID.atSetpoint()) {
           double minStep = 0.05;
-          rotationSpeed += (rotationSpeed > 0) ? minStep : -minStep;
+          // Only add feed-forward if PID output is too small to overcome friction
+          if (Math.abs(rotationSpeed) < minStep) {
+            rotationSpeed = Math.copySign(minStep, rotationSpeed);
+          }
         }
 
         rotationSpeed = Math.max(-1.0, Math.min(1.0, rotationSpeed));
       }
 
-      // Allow the driver to still move the robot while it auto-aligns rotation
       m_DriveSystem.drive(xSpeed.getAsDouble(), ySpeed.getAsDouble(), rotationSpeed, fieldRelative.getAsBoolean());
     }, m_DriveSystem).withName("AlignToTargetPID");
-  }
+}
 
   public Command launchWithVision() {
     return this.run(() -> {

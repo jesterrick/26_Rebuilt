@@ -46,7 +46,7 @@ public class VisionConstants {
   /** The height of the AprilTag on the field, in meters. */
   public static final double kAprilTagHeight = Units.inchesToMeters(44.25);
   /** The height of the Limelight camera from the ground, in meters. */
-  public static final double kCameraHeight = Units.inchesToMeters(19.0);
+  public static final double kCameraHeight = Units.inchesToMeters(19.25);
   /** The mounting angle of the Limelight camera, in degrees. */
-  public static final double kMountAngle = 26.0;
+  public static final double kMountAngle = 31.5;
 }

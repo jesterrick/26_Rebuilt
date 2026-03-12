@@ -41,8 +41,8 @@ public class LauncherConstants {
     // format: kShotMap.put(distanceInMeters, speedInRPS);
     kShotMap.put(Units.inchesToMeters(24.0), 45.0);
     kShotMap.put(Units.inchesToMeters(48.0), 52.0);
-    kShotMap.put(Units.inchesToMeters(72.0), 60.0);
-    kShotMap.put(Units.inchesToMeters(96.0), 70.0);
+    kShotMap.put(Units.inchesToMeters(67.0), 58.0);
+    kShotMap.put(Units.inchesToMeters(96.0), 66.0);
   }
 
 }

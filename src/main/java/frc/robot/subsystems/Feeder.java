@@ -52,7 +52,7 @@ public class Feeder extends SubsystemBase {
 
   public Command feedLauncher() {
     return this.run(() -> this.runMotor(feederSpeed.get()))
-    .withTimeout(5.0) // Safety timeout
+    //.withTimeout(5.0) // Safety timeout
     .withName("FeederOn")
     .finallyDo(this::stopMotor);
   }

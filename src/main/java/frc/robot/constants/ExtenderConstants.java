@@ -23,6 +23,8 @@ public class ExtenderConstants {
 
   public static final double kExtendPartialTarget = Units.inchesToMeters(8.0);
 
+  public static final double kExtendLaunchTarget = Units.inchesToMeters(10.0);
+
   public static final double kErrorToleranceInInches = 0.1;
 
   /* Fixed Hardware Configs */
