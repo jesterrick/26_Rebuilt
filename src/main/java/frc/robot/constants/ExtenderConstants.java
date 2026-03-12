@@ -15,15 +15,13 @@ public class ExtenderConstants {
   public static final double kA = 0.4;
   public static final double kMaxAccel = 12.0;
 
-<<<<<<< Updated upstream
-  public static final double kAllowedError = RobotUtils.inchesToMeters(0.5);
-=======
   public static final double kAllowedError = Units.inchesToMeters(0.2);
->>>>>>> Stashed changes
 
   public static final double kMaxPositionDifference = Units.inchesToMeters(2.0);
 
   public static final double kExtendOutTarget = Units.inchesToMeters(12.0);
+
+  public static final double kExtendPartialTarget = Units.inchesToMeters(8.0);
 
   public static final double kErrorToleranceInInches = 0.1;
 

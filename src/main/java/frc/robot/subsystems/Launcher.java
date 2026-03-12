@@ -21,6 +21,7 @@ import frc.robot.utils.VisionUtils;
 import frc.robot.utils.LoggedTunableNumber;
 import frc.robot.utils.Telemetry;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.math.util.Units;
 
 public class Launcher extends SubsystemBase {
@@ -198,7 +199,7 @@ public class Launcher extends SubsystemBase {
   }
 
   public Command align(DoubleSupplier xSpeed, DoubleSupplier ySpeed, java.util.function.BooleanSupplier fieldRelative) {
-    Command cmd = this.run(() -> {
+    return Commands.run(() -> {
       double rotationSpeed = 0;
       if (m_HasTarget) {
         rotationSpeed = m_AlignPID.calculate(m_TX, 0);
@@ -214,9 +215,7 @@ public class Launcher extends SubsystemBase {
 
       // Allow the driver to still move the robot while it auto-aligns rotation
       m_DriveSystem.drive(xSpeed.getAsDouble(), ySpeed.getAsDouble(), rotationSpeed, fieldRelative.getAsBoolean());
-    });
-    cmd.addRequirements(this.m_DriveSystem);
-    return cmd.withName("AlignToTargetPID");
+    }, m_DriveSystem).withName("AlignToTargetPID");
   }
 
   public Command launchWithVision() {

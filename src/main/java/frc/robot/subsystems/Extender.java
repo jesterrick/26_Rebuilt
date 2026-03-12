@@ -8,6 +8,7 @@ import frc.robot.configs.ExtenderConfigs;
 import frc.robot.constants.CanIdConstants;
 import frc.robot.constants.ExtenderConstants;
 import frc.robot.constants.GlobalConstants;
+import java.util.function.DoubleSupplier;
 
 import com.revrobotics.spark.SparkLowLevel;
 import com.revrobotics.spark.SparkMax;
@@ -45,6 +46,7 @@ public class Extender extends SubsystemBase {
   private final LoggedTunableNumber kMaxAccel_Tuning = new LoggedTunableNumber("Extender/MaxAccel", ExtenderConstants.kMaxAccel);
   
   private final LoggedTunableNumber maxExtensionInches = new LoggedTunableNumber("Extender/MaxExtensionInches", Units.metersToInches(ExtenderConstants.kExtendOutTarget));
+  private final LoggedTunableNumber partialExtendInches = new LoggedTunableNumber("Extender/PartialExtendInches", Units.metersToInches(ExtenderConstants.kExtendPartialTarget));
 
   /** Creates a new Extender. */
   public Extender() {
@@ -106,7 +108,7 @@ public class Extender extends SubsystemBase {
     Telemetry.putDebugNumber("Extender/MaxAccel", ExtenderConstants.kMaxAccel);
 
     if (m_isFaulted) {
-      stop(); // Keep them stopped if we are already in a fault state
+      stopMotors(); // Keep them stopped if we are already in a fault state
       return;
     }
 
@@ -121,11 +123,11 @@ public class Extender extends SubsystemBase {
 
     if (Math.abs(leaderPos - followPos) > ExtenderConstants.kMaxPositionDifference) {
       m_isFaulted = true; // Trip the software breaker
-      stop();
+      stopMotors();
     }
   }
 
-  private void stop() {
+  private void stopMotors() {
     this.m_LeaderMotor.stopMotor();
     this.m_FollowMotor.stopMotor();
   }
@@ -146,7 +148,7 @@ public class Extender extends SubsystemBase {
         .until(() -> m_isFaulted ||
             Math.abs(m_LeaderEncoder.getPosition() - position) < ExtenderConstants.kPositionTolerance)
         .withTimeout(3.0)
-        .finallyDo((interrupted) -> stop())
+        .finallyDo((interrupted) -> stopMotors())
         .withName("ExtenderTo" + position);
   }
 
@@ -160,6 +162,11 @@ public class Extender extends SubsystemBase {
         .withName("ExtenderOut");
   }
 
+  public Command partialExtend() {
+    return goToPosition(Units.inchesToMeters(partialExtendInches.get()))
+      .withName("ExtenderPartial");
+  }
+
   public Command home() {
     return this.run(() -> {
       // Apply a gentle negative voltage to move toward the hard stop
@@ -170,7 +177,7 @@ public class Extender extends SubsystemBase {
         // Trigger when current spikes (30A is a safe starting point for a NEO)
         .until(() -> m_LeaderMotor.getOutputCurrent() > GlobalConstants.kMediumCurrentLimit)
         .finallyDo((interrupted) -> {
-          stop();
+          stopMotors();
           if (!interrupted) {
             // Reset both encoders to 0.0 only if we reached the stop (not cancelled)
             this.m_TargetPOS = 0.0;
@@ -183,8 +190,6 @@ public class Extender extends SubsystemBase {
         .withName("ExtenderHoming");
   }
 
-<<<<<<< Updated upstream
-=======
   public Command followJoystick(DoubleSupplier speedSupplier) {
     return this.run(() -> {
       double speed = speedSupplier.getAsDouble();
@@ -220,7 +225,6 @@ public class Extender extends SubsystemBase {
     }).withName("ExtenderClearFaults");
   }
 
->>>>>>> Stashed changes
   public SparkMax getLeader() {
     return m_LeaderMotor;
   }

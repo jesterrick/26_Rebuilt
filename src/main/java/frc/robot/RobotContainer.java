@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 
@@ -56,9 +57,9 @@ public class RobotContainer {
   JoystickButton b_AlignRobot = new JoystickButton(m_driverJoystick, OIConstants.kAlignRobot);
   JoystickButton b_LaunchModeToggle = new JoystickButton(m_operatorJoystick, OIConstants.kSwitchLaunchMode);
   JoystickButton b_ToggleDriveMode = new JoystickButton(m_driverJoystick, OIConstants.kToggleDriveMode);
-
-  JoystickButton b_EmergencyStop = new JoystickButton(m_operatorJoystick, 2); // B button
-  JoystickButton b_ClearExtenderFaults = new JoystickButton(m_operatorJoystick, 3); // X button
+  JoystickButton b_ExtendStopFollow = new JoystickButton(m_operatorJoystick, OIConstants.kExtenderFollowJoystick);
+  JoystickButton b_EmergencyStop = new JoystickButton(m_operatorJoystick, OIConstants.kEmergencyStop); // B button
+  JoystickButton b_ClearExtenderFaults = new JoystickButton(m_operatorJoystick, OIConstants.kClearExtenderFaults); // X button
 
   boolean fieldRelative = true;
   boolean useVisionForLaunch = true;
@@ -102,12 +103,6 @@ public class RobotContainer {
 
     // send the extender out
     this.b_ExtendOut
-<<<<<<< Updated upstream
-      .and(() -> RobotHealth.isHealthy("Extender Leader"))
-      .and(() -> RobotHealth.isHealthy("Extender Follower"))
-      .onTrue(m_Extender.fullExtend());
-    
-=======
         .and(() -> RobotHealth.isHealthy("Extender Leader"))
         .and(() -> RobotHealth.isHealthy("Extender Follower"))
         .onTrue(m_Extender.fullExtend());
@@ -120,7 +115,6 @@ public class RobotContainer {
             () -> m_driverJoystick.getX() // Pass the joystick supplier
         ));
 
->>>>>>> Stashed changes
     this.b_HomeExtender
       .and(() -> RobotHealth.isHealthy("Extender Leader"))
       .and(() -> RobotHealth.isHealthy("Extender Follower"))
@@ -145,16 +139,6 @@ public class RobotContainer {
 
     // Unified Launch Command: Align, Spool based on distance, and Feed when ready
     this.b_Launcher
-<<<<<<< Updated upstream
-      .and(() -> RobotHealth.isHealthy("Launcher"))
-      .and(() -> RobotHealth.isHealthy("Feeder"))
-      .whileTrue(
-        m_Launcher.launch(() -> m_operatorJoystick.getRawAxis(5))
-            .alongWith(
-                // turn on the feeder after launcher has reached speed
-                new WaitUntilCommand(m_Launcher::atSpeed)
-                    .andThen(m_Feeder.feedLauncher())));
-=======
         .and(() -> RobotHealth.isHealthy("Launcher"))
         .and(() -> RobotHealth.isHealthy("Feeder"))
         .whileTrue(
@@ -173,7 +157,6 @@ public class RobotContainer {
 
     this.b_AlignRobot.whileTrue(m_Launcher.align(() -> m_driverJoystick.getY(), () -> m_driverJoystick.getX(), () -> fieldRelative));
 
->>>>>>> Stashed changes
   }
 
   public void startHealthChecks() {
@@ -196,14 +179,6 @@ public class RobotContainer {
     checkMotor(m_Intake.getMotor(), "Intake");
     checkMotor(m_Feeder.getMotor(), "Feeder");
     checkMotor(m_Launcher.getMotor(), "Launcher");
-<<<<<<< Updated upstream
-    
-    // This sends one big string like "{Extender Leader=OK, Feeder=DISCONNECTED}"
-    SmartDashboard.putString("Health/Report", RobotHealth.getReport());
-    
-=======
-
->>>>>>> Stashed changes
     // This sends the big green/red light signal
     Telemetry.putBoolean("Health/All Systems Good", RobotHealth.isEverythingOk());
   });
@@ -269,11 +244,13 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-    return new ParallelCommandGroup(
-        m_Extender.fullExtend(),
+    return new SequentialCommandGroup(
+      new ParallelCommandGroup(
+        m_Extender.partialExtend(),
         m_Launcher.launchWithVision()
             .alongWith(
                 new WaitUntilCommand(m_Launcher::atSpeed)
-                    .andThen(m_Feeder.feedLauncher().withTimeout(10.0))));
+                    .andThen(m_Feeder.feedLauncher().withTimeout(10.0)))),
+      m_Extender.fullExtend());
   }
 }
