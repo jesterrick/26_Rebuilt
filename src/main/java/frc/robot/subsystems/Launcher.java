@@ -40,10 +40,10 @@ public class Launcher extends SubsystemBase {
   private double m_TY;
   NetworkTable m_Table;
 
-  private final LoggedTunableNumber alignP = new LoggedTunableNumber("Launcher/Align/kP", 0.02);
-  private final LoggedTunableNumber alignD = new LoggedTunableNumber("Launcher/Align/kD", 0.05);
+  private final LoggedTunableNumber alignP = new LoggedTunableNumber("Launcher/Align/kP", LauncherConstants.kAlignP);
+  private final LoggedTunableNumber alignD = new LoggedTunableNumber("Launcher/Align/kD", LauncherConstants.kAlignD);
   private final LoggedTunableNumber mountAngle = new LoggedTunableNumber("Vision/MountAngle", VisionConstants.kMountAngle);
-  private final LoggedTunableNumber shotOffset = new LoggedTunableNumber("Launcher/ShotSpeedOffset", 0.0);
+  private final LoggedTunableNumber shotOffset = new LoggedTunableNumber("Launcher/ShotSpeedOffset", LauncherConstants.kShotOffset);
   
   private final LoggedTunableNumber flyP = new LoggedTunableNumber("Launcher/Flywheel/kP", LauncherConstants.kP);
   private final LoggedTunableNumber flyS = new LoggedTunableNumber("Launcher/Flywheel/kS", LauncherConstants.kS);

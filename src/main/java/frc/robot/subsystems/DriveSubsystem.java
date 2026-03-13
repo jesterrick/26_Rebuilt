@@ -8,6 +8,7 @@ import edu.wpi.first.hal.FRCNetComm.tInstances;
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.HolonomicDriveController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -16,6 +17,7 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.constants.CanIdConstants;
 import frc.robot.constants.DriveConstants;
@@ -25,6 +27,10 @@ import frc.robot.utils.Telemetry;
 import frc.robot.utils.VisionUtils;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
@@ -76,16 +82,44 @@ public class DriveSubsystem extends SubsystemBase {
   private final LoggedTunableNumber driveP = new LoggedTunableNumber("Drive/DriveP", DriveConstants.kDriveP);
   private final LoggedTunableNumber driveS = new LoggedTunableNumber("Drive/DriveS", DriveConstants.kDriveS);
   private final LoggedTunableNumber driveV = new LoggedTunableNumber("Drive/DriveV", DriveConstants.kDriveV);
-  
+
   private final LoggedTunableNumber turnP = new LoggedTunableNumber("Drive/TurnP", DriveConstants.kTurnP);
   private final LoggedTunableNumber turnS = new LoggedTunableNumber("Drive/TurnS", DriveConstants.kTurnS);
   private final LoggedTunableNumber turnV = new LoggedTunableNumber("Drive/TurnV", DriveConstants.kTurnV);
-  
-  private final LoggedTunableNumber maxSpeed = new LoggedTunableNumber("Drive/MaxSpeed", DriveConstants.kMaxSpeedMetersPerSecond);
+
+  private final LoggedTunableNumber maxSpeed = new LoggedTunableNumber("Drive/MaxSpeed",
+      DriveConstants.kMaxSpeedMetersPerSecond);
 
   /** Creates a new DriveSubsystem. */
   public DriveSubsystem() {
     HAL.report(tResourceType.kResourceType_RobotDrive, tInstances.kRobotDriveSwerve_MaxSwerve);
+
+    RobotConfig config;
+    try {
+      config = RobotConfig.fromGUISettings();
+    } catch (Exception e) {
+      e.printStackTrace();
+      config = null;
+    }
+
+    AutoBuilder.configure(
+        this::getPose,
+        this::resetOdometry,
+        this::getChassisSpeeds,
+        (speeds, feedforwards) -> driveWithChassisSpeeds(speeds),
+        new PPHolonomicDriveController(
+            new PIDConstants(5.0, 0.0, 0.0), // Translation PID — tune these
+            new PIDConstants(5.0, 0.0, 0.0) // Rotation PID — tune these
+        ),
+        config,
+        () -> {
+          var alliance = DriverStation.getAlliance();
+          if (alliance.isPresent()) {
+            return alliance.get() == DriverStation.Alliance.Red;
+          }
+          return false;
+        },
+        this);
   }
 
   @Override
@@ -104,8 +138,10 @@ public class DriveSubsystem extends SubsystemBase {
       turnConfig.closedLoop.feedForward.kV(turnV.get());
 
       // Apply to all 4 modules
-      SparkMax[] driveMotors = {m_frontLeft.getDrive(), m_frontRight.getDrive(), m_rearLeft.getDrive(), m_rearRight.getDrive()};
-      SparkMax[] turnMotors = {m_frontLeft.getTurn(), m_frontRight.getTurn(), m_rearLeft.getTurn(), m_rearRight.getTurn()};
+      SparkMax[] driveMotors = { m_frontLeft.getDrive(), m_frontRight.getDrive(), m_rearLeft.getDrive(),
+          m_rearRight.getDrive() };
+      SparkMax[] turnMotors = { m_frontLeft.getTurn(), m_frontRight.getTurn(), m_rearLeft.getTurn(),
+          m_rearRight.getTurn() };
 
       for (SparkMax motor : driveMotors) {
         motor.configure(driveConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
@@ -128,10 +164,11 @@ public class DriveSubsystem extends SubsystemBase {
     // Add vision measurements if a target is visible
     var table = NetworkTableInstance.getDefault().getTable("limelight");
     if (table.getEntry("tv").getDouble(0) == 1.0) {
-      // Subtract latency (tl + cl) from current time. Table values are in milliseconds, so divide by 1000.
+      // Subtract latency (tl + cl) from current time. Table values are in
+      // milliseconds, so divide by 1000.
       double latency = (table.getEntry("tl").getDouble(0) + table.getEntry("cl").getDouble(0)) / 1000.0;
       double timestamp = Timer.getFPGATimestamp() - latency;
-      
+
       m_poseEstimator.addVisionMeasurement(VisionUtils.getBotPose(), timestamp);
     }
 
@@ -313,9 +350,9 @@ public class DriveSubsystem extends SubsystemBase {
         .finallyDo(() -> this.drive(0, 0, 0, fieldRelativeSupplier.getAsBoolean()));
   }
 
-  public Command orient(){
-    return this.run(()->zeroHeading())
-    .withName("OrientBot");
+  public Command orient() {
+    return this.run(() -> zeroHeading())
+        .withName("OrientBot");
   }
 
   public SparkMax getRightFrontDrive() {

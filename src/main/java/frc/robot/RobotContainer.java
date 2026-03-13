@@ -14,8 +14,11 @@ import frc.robot.utils.RobotHealth;
 import frc.robot.utils.Telemetry;
 
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.path.PathPlannerPath;
 import com.revrobotics.spark.SparkMax;
 
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
@@ -248,7 +251,19 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-    return new SequentialCommandGroup(
+    try{
+        // Load the path you want to follow using its name in the GUI
+        PathPlannerPath path = PathPlannerPath.fromPathFile("AutoShoot(Left)");
+
+        // Create a path following command using AutoBuilder. This will also trigger event markers.
+        return AutoBuilder.followPath(path);
+    } catch (Exception e) {
+        DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());
+        return Commands.none();
+    }
+  }
+
+    /*return new SequentialCommandGroup(
         new ParallelCommandGroup(
             m_Extender.partialExtend(),
             m_Launcher.launchWithVision()
@@ -256,7 +271,7 @@ public class RobotContainer {
                     new WaitUntilCommand(m_Launcher::atSpeed)
                         .andThen(m_Feeder.feedLauncher().withTimeout(10.0)))),
         m_Extender.fullExtend());
-  }
+  }*/
 
   public void periodic() {
     Telemetry.putBoolean("Launcher/Launch With Vision", useVisionForLaunch);
