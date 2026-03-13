@@ -13,6 +13,7 @@ import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.constants.CanIdConstants;
+import frc.robot.constants.GlobalConstants;
 import frc.robot.configs.LauncherConfigs;
 import frc.robot.constants.LauncherConstants;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -29,7 +30,8 @@ public class Launcher extends SubsystemBase {
   private final VelocityVoltage m_velocityRequest = new VelocityVoltage(0);
   private final DriveSubsystem m_DriveSystem;
 
-  private final PIDController m_AlignPID = new PIDController(0.04, 0, 0.001);
+  private final PIDController m_AlignPID = new PIDController(LauncherConstants.kAlignP, 0, LauncherConstants.kAlignD);
+
   private final LinearFilter m_TXFilter = LinearFilter.movingAverage(5);
   private final LinearFilter m_TYFilter = LinearFilter.movingAverage(5);
 
@@ -42,9 +44,11 @@ public class Launcher extends SubsystemBase {
 
   private final LoggedTunableNumber alignP = new LoggedTunableNumber("Launcher/Align/kP", LauncherConstants.kAlignP);
   private final LoggedTunableNumber alignD = new LoggedTunableNumber("Launcher/Align/kD", LauncherConstants.kAlignD);
-  private final LoggedTunableNumber mountAngle = new LoggedTunableNumber("Vision/MountAngle", VisionConstants.kMountAngle);
-  private final LoggedTunableNumber shotOffset = new LoggedTunableNumber("Launcher/ShotSpeedOffset", LauncherConstants.kShotOffset);
-  
+  private final LoggedTunableNumber mountAngle = new LoggedTunableNumber("Vision/MountAngle",
+      VisionConstants.kMountAngle);
+  private final LoggedTunableNumber shotOffset = new LoggedTunableNumber("Launcher/ShotSpeedOffset",
+      LauncherConstants.kShotOffset);
+
   private final LoggedTunableNumber flyP = new LoggedTunableNumber("Launcher/Flywheel/kP", LauncherConstants.kP);
   private final LoggedTunableNumber flyS = new LoggedTunableNumber("Launcher/Flywheel/kS", LauncherConstants.kS);
   private final LoggedTunableNumber flyV = new LoggedTunableNumber("Launcher/Flywheel/kV", LauncherConstants.kV);
@@ -59,30 +63,32 @@ public class Launcher extends SubsystemBase {
     this.m_HasTarget = false;
     this.m_TargetSpeed = 0.0;
     this.m_Table = NetworkTableInstance.getDefault().getTable("limelight");
-    
+
     m_AlignPID.setTolerance(1.0); // 1 degree tolerance
-    
+
     // Ensure Limelight is in the correct pipeline for vision tracking
     this.m_Table.getEntry("pipeline").setNumber(VisionConstants.VISION_PIPELINE);
   }
 
   @Override
   public void periodic() {
-    // Update tuning values if they changed on the dashboard
-    LoggedTunableNumber.ifChanged(hashCode(), () -> {
-      m_AlignPID.setP(alignP.get());
-      m_AlignPID.setD(alignD.get());
-    }, alignP, alignD);
+    if (GlobalConstants.kTuningMode) {
 
-    LoggedTunableNumber.ifChanged(hashCode() + 1, () -> {
-      TalonFXConfiguration config = new TalonFXConfiguration();
-      m_IntakeMotor.getConfigurator().refresh(config);
-      config.Slot0.kP = flyP.get();
-      config.Slot0.kS = flyS.get();
-      config.Slot0.kV = flyV.get();
-      m_IntakeMotor.getConfigurator().apply(config);
-    }, flyP, flyS, flyV);
+      // Update tuning values if they changed on the dashboard
+      LoggedTunableNumber.ifChanged(hashCode(), () -> {
+        m_AlignPID.setP(alignP.get());
+        m_AlignPID.setD(alignD.get());
+      }, alignP, alignD);
 
+      LoggedTunableNumber.ifChanged(hashCode() + 1, () -> {
+        TalonFXConfiguration config = new TalonFXConfiguration();
+        m_IntakeMotor.getConfigurator().refresh(config);
+        config.Slot0.kP = flyP.get();
+        config.Slot0.kS = flyS.get();
+        config.Slot0.kV = flyV.get();
+        m_IntakeMotor.getConfigurator().apply(config);
+      }, flyP, flyS, flyV);
+    }
     // Check for target validity (tv == 1.0) and retrieve the target ID (tid).
     boolean hasTarget = m_Table.getEntry(VisionConstants.kTargetValidKey)
         .getDouble(VisionConstants.kDefaultTargetValid) == 1.0;
@@ -92,8 +98,10 @@ public class Launcher extends SubsystemBase {
     if (hasTarget && VisionUtils.isTargetingCorrectHoop(tagID)) {
       this.m_HasTarget = true;
       // Filter the vision inputs to reduce jitter
-      m_TY = m_TYFilter.calculate(m_Table.getEntry(VisionConstants.kTargetYKey).getDouble(VisionConstants.kDefaultTargetY));
-      m_TX = m_TXFilter.calculate(m_Table.getEntry(VisionConstants.kTargetXKey).getDouble(VisionConstants.kDefaultTargetX));
+      m_TY = m_TYFilter
+          .calculate(m_Table.getEntry(VisionConstants.kTargetYKey).getDouble(VisionConstants.kDefaultTargetY));
+      m_TX = m_TXFilter
+          .calculate(m_Table.getEntry(VisionConstants.kTargetXKey).getDouble(VisionConstants.kDefaultTargetX));
     } else {
       this.m_HasTarget = false;
       m_TY = 0.0;
@@ -160,9 +168,10 @@ public class Launcher extends SubsystemBase {
       // Calculate horizontal distance using trigonometry.
       // All heights are now standardized to METERS in VisionConstants.
       double angleToTarget = Math.toRadians(mountAngle.get() + m_TY);
-      
+
       // Safety check: Ensure we are not dividing by zero or a very small number
-      if (Math.abs(Math.tan(angleToTarget)) < 0.01) return 0.0;
+      if (Math.abs(Math.tan(angleToTarget)) < 0.01)
+        return 0.0;
 
       double distanceMeters = (VisionConstants.kAprilTagHeight - VisionConstants.kCameraHeight) /
           Math.tan(angleToTarget);
@@ -219,7 +228,7 @@ public class Launcher extends SubsystemBase {
 
       m_DriveSystem.drive(xSpeed.getAsDouble(), ySpeed.getAsDouble(), rotationSpeed, fieldRelative.getAsBoolean());
     }, m_DriveSystem).withName("AlignToTargetPID");
-}
+  }
 
   public Command launchWithVision() {
     return this.run(() -> {
@@ -245,7 +254,7 @@ public class Launcher extends SubsystemBase {
     return this.run(() -> {
       Telemetry.putNumber("Launcher/Slider Value", supplierSpeed.getAsDouble());
       double speed = (supplierSpeed.getAsDouble() + 1) / 2;
-      
+
       this.m_TargetSpeed = this.calculateRPMFromSlider(speed);
       this.runMotor(this.m_TargetSpeed);
     })

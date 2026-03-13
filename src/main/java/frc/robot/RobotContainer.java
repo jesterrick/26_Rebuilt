@@ -58,9 +58,8 @@ public class RobotContainer {
   JoystickButton b_LaunchModeToggle = new JoystickButton(m_operatorJoystick, OIConstants.kSwitchLaunchMode);
   JoystickButton b_ToggleDriveMode = new JoystickButton(m_driverJoystick, OIConstants.kToggleDriveMode);
   JoystickButton b_ExtendStopFollow = new JoystickButton(m_operatorJoystick, OIConstants.kExtenderFollowJoystick);
-  JoystickButton b_EmergencyStop = new JoystickButton(m_operatorJoystick, OIConstants.kEmergencyStop); // B button
-  JoystickButton b_ClearExtenderFaults = new JoystickButton(m_operatorJoystick, OIConstants.kClearExtenderFaults); // X
-                                                                                                                   // button
+  JoystickButton b_EmergencyStop = new JoystickButton(m_operatorJoystick, OIConstants.kEmergencyStop);
+  JoystickButton b_ClearExtenderFaults = new JoystickButton(m_operatorJoystick, OIConstants.kClearExtenderFaults); 
 
   boolean fieldRelative = true;
   boolean useVisionForLaunch = true;
@@ -147,7 +146,7 @@ public class RobotContainer {
                     m_Launcher.align(() -> m_driverJoystick.getY(), () -> m_driverJoystick.getX(), () -> false)
                         .alongWith(
                             m_Launcher.launchWithVision()),
-                    m_Launcher.launchWithJoystick(() -> m_operatorJoystick.getRawAxis(5)),
+                    m_Launcher.launchWithJoystick(() -> m_operatorJoystick.getRawAxis(OIConstants.kManualLaunchSlider)),
                     () -> useVisionForLaunch
                 )
                 .alongWith(

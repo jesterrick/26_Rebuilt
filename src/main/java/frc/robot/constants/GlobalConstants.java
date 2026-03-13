@@ -16,4 +16,6 @@ public class GlobalConstants {
     public static final double kLowVoltageCompensation = 10.0;
     public static final double kMedVoltageCompensation = 11.0;
     public static final double kHighVoltageCompensation = 12.0;
+
+    public static boolean kTuningMode = false;
 }

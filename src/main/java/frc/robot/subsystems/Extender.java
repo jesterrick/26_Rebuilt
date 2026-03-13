@@ -41,13 +41,19 @@ public class Extender extends SubsystemBase {
   private final LoggedTunableNumber kS_Tuning = new LoggedTunableNumber("Extender/kS", ExtenderConstants.kS);
   private final LoggedTunableNumber kV_Tuning = new LoggedTunableNumber("Extender/kV", ExtenderConstants.kV);
   private final LoggedTunableNumber kA_Tuning = new LoggedTunableNumber("Extender/kA", ExtenderConstants.kA);
-  
-  private final LoggedTunableNumber kCruiseVelocity_Tuning = new LoggedTunableNumber("Extender/CruiseVelocity", ExtenderConstants.kCruiseVelocity);
-  private final LoggedTunableNumber kMaxAccel_Tuning = new LoggedTunableNumber("Extender/MaxAccel", ExtenderConstants.kMaxAccel);
-  
-  private final LoggedTunableNumber maxExtensionInches = new LoggedTunableNumber("Extender/MaxExtensionInches", Units.metersToInches(ExtenderConstants.kExtendOutTarget));
-  private final LoggedTunableNumber partialExtendInches = new LoggedTunableNumber("Extender/PartialExtendInches", Units.metersToInches(ExtenderConstants.kExtendPartialTarget));
-  private final LoggedTunableNumber launcherExtendInches = new LoggedTunableNumber("Extender/LauncherExtendInches", Units.metersToInches(ExtenderConstants.kExtendLaunchTarget));
+
+  private final LoggedTunableNumber kCruiseVelocity_Tuning = new LoggedTunableNumber("Extender/CruiseVelocity",
+      ExtenderConstants.kCruiseVelocity);
+  private final LoggedTunableNumber kMaxAccel_Tuning = new LoggedTunableNumber("Extender/MaxAccel",
+      ExtenderConstants.kMaxAccel);
+
+  private final LoggedTunableNumber maxExtensionInches = new LoggedTunableNumber("Extender/MaxExtensionInches",
+      Units.metersToInches(ExtenderConstants.kExtendOutTarget));
+  private final LoggedTunableNumber partialExtendInches = new LoggedTunableNumber("Extender/PartialExtendInches",
+      Units.metersToInches(ExtenderConstants.kExtendPartialTarget));
+  private final LoggedTunableNumber launcherExtendInches = new LoggedTunableNumber("Extender/LauncherExtendInches",
+      Units.metersToInches(ExtenderConstants.kExtendLaunchTarget));
+
   /** Creates a new Extender. */
   public Extender() {
 
@@ -77,22 +83,24 @@ public class Extender extends SubsystemBase {
   @Override
   public void periodic() {
 
-    // Update tuning values if they changed on the dashboard
-    LoggedTunableNumber.ifChanged(hashCode(), () -> {
-      SparkMaxConfig config = new SparkMaxConfig().apply(ExtenderConfigs.config);
-      config.closedLoop.p(kP_Tuning.get());
-      
-      // Update FeedForward
-      config.closedLoop.feedForward.kS(kS_Tuning.get());
-      config.closedLoop.feedForward.kV(kV_Tuning.get());
-      config.closedLoop.feedForward.kA(kA_Tuning.get());
+    if (GlobalConstants.kTuningMode) {
+      // Update tuning values if they changed on the dashboard
+      LoggedTunableNumber.ifChanged(hashCode(), () -> {
+        SparkMaxConfig config = new SparkMaxConfig().apply(ExtenderConfigs.config);
+        config.closedLoop.p(kP_Tuning.get());
 
-      config.closedLoop.maxMotion.cruiseVelocity(kCruiseVelocity_Tuning.get());
-      config.closedLoop.maxMotion.maxAcceleration(kMaxAccel_Tuning.get());
-      
-      m_LeaderMotor.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
-      m_FollowMotor.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
-    }, kP_Tuning, kS_Tuning, kV_Tuning, kA_Tuning, kCruiseVelocity_Tuning, kMaxAccel_Tuning);
+        // Update FeedForward
+        config.closedLoop.feedForward.kS(kS_Tuning.get());
+        config.closedLoop.feedForward.kV(kV_Tuning.get());
+        config.closedLoop.feedForward.kA(kA_Tuning.get());
+
+        config.closedLoop.maxMotion.cruiseVelocity(kCruiseVelocity_Tuning.get());
+        config.closedLoop.maxMotion.maxAcceleration(kMaxAccel_Tuning.get());
+
+        m_LeaderMotor.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+        m_FollowMotor.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+      }, kP_Tuning, kS_Tuning, kV_Tuning, kA_Tuning, kCruiseVelocity_Tuning, kMaxAccel_Tuning);
+    }
 
     double leaderPos = this.m_LeaderEncoder.getPosition();
     double followPos = this.m_FollowEncoder.getPosition();
@@ -113,8 +121,10 @@ public class Extender extends SubsystemBase {
     }
 
     // High current + low velocity = stall
-    boolean leaderStalled = m_LeaderMotor.getOutputCurrent() > ExtenderConstants.kCurrentLimit && Math.abs(m_LeaderEncoder.getVelocity()) < 0.01;
-    boolean followStalled = m_FollowMotor.getOutputCurrent() > ExtenderConstants.kCurrentLimit && Math.abs(m_FollowEncoder.getVelocity()) < 0.01;
+    boolean leaderStalled = m_LeaderMotor.getOutputCurrent() > ExtenderConstants.kCurrentLimit
+        && Math.abs(m_LeaderEncoder.getVelocity()) < 0.01;
+    boolean followStalled = m_FollowMotor.getOutputCurrent() > ExtenderConstants.kCurrentLimit
+        && Math.abs(m_FollowEncoder.getVelocity()) < 0.01;
 
     if (leaderStalled || followStalled) {
       m_isFaulted = true;
@@ -138,8 +148,7 @@ public class Extender extends SubsystemBase {
         this.m_LeaderController.setSetpoint(position, ControlType.kMAXMotionPositionControl);
         // this.m_LeaderController.setSetpoint(position, ControlType.kPosition);
         this.m_TargetPOS = position;
-      }
-      else if(position == 0.0){
+      } else if (position == 0.0) {
         this.m_LeaderController.setSetpoint(position, ControlType.kMAXMotionPositionControl);
         // this.m_LeaderController.setSetpoint(position, ControlType.kPosition);
         this.m_TargetPOS = position;
@@ -164,12 +173,12 @@ public class Extender extends SubsystemBase {
 
   public Command partialExtend() {
     return goToPosition(Units.inchesToMeters(partialExtendInches.get()))
-      .withName("ExtenderPartial");
+        .withName("ExtenderPartial");
   }
 
   public Command launchExtend() {
     return goToPosition(Units.inchesToMeters(launcherExtendInches.get()))
-    .withName("ExtenderLaunch");
+        .withName("ExtenderLaunch");
   }
 
   public Command home() {
@@ -203,7 +212,7 @@ public class Extender extends SubsystemBase {
         stopMotors();
       } else {
         double manualSpeed = speed * ExtenderConstants.kMotorSpeed;
-        
+
         // Safety: Don't allow driving forward if already at/past max extension
         if (manualSpeed > 0 && m_LeaderEncoder.getPosition() >= Units.inchesToMeters(maxExtensionInches.get())) {
           manualSpeed = 0;

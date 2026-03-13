@@ -20,6 +20,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.constants.CanIdConstants;
 import frc.robot.constants.DriveConstants;
+import frc.robot.constants.GlobalConstants;
 import frc.robot.constants.OIConstants;
 import frc.robot.utils.LoggedTunableNumber;
 import frc.robot.utils.Telemetry;
@@ -123,33 +124,35 @@ public class DriveSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    // Update tuning values if they changed
-    LoggedTunableNumber.ifChanged(hashCode(), () -> {
-      // Create new configs based on the base config but with the new P/FF values
-      SparkMaxConfig driveConfig = new SparkMaxConfig().apply(DriveConfigs.MAXSwerveModule.drivingConfig);
-      driveConfig.closedLoop.p(driveP.get());
-      driveConfig.closedLoop.feedForward.kS(driveS.get());
-      driveConfig.closedLoop.feedForward.kV(driveV.get());
 
-      SparkMaxConfig turnConfig = new SparkMaxConfig().apply(DriveConfigs.MAXSwerveModule.turningConfig);
-      turnConfig.closedLoop.p(turnP.get());
-      turnConfig.closedLoop.feedForward.kS(turnS.get());
-      turnConfig.closedLoop.feedForward.kV(turnV.get());
+    if (GlobalConstants.kTuningMode) {
+      // Update tuning values if they changed
+      LoggedTunableNumber.ifChanged(hashCode(), () -> {
+        // Create new configs based on the base config but with the new P/FF values
+        SparkMaxConfig driveConfig = new SparkMaxConfig().apply(DriveConfigs.MAXSwerveModule.drivingConfig);
+        driveConfig.closedLoop.p(driveP.get());
+        driveConfig.closedLoop.feedForward.kS(driveS.get());
+        driveConfig.closedLoop.feedForward.kV(driveV.get());
 
-      // Apply to all 4 modules
-      SparkMax[] driveMotors = { m_frontLeft.getDrive(), m_frontRight.getDrive(), m_rearLeft.getDrive(),
-          m_rearRight.getDrive() };
-      SparkMax[] turnMotors = { m_frontLeft.getTurn(), m_frontRight.getTurn(), m_rearLeft.getTurn(),
-          m_rearRight.getTurn() };
+        SparkMaxConfig turnConfig = new SparkMaxConfig().apply(DriveConfigs.MAXSwerveModule.turningConfig);
+        turnConfig.closedLoop.p(turnP.get());
+        turnConfig.closedLoop.feedForward.kS(turnS.get());
+        turnConfig.closedLoop.feedForward.kV(turnV.get());
 
-      for (SparkMax motor : driveMotors) {
-        motor.configure(driveConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
-      }
-      for (SparkMax motor : turnMotors) {
-        motor.configure(turnConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
-      }
-    }, driveP, driveS, driveV, turnP, turnS, turnV);
+        // Apply to all 4 modules
+        SparkMax[] driveMotors = { m_frontLeft.getDrive(), m_frontRight.getDrive(), m_rearLeft.getDrive(),
+            m_rearRight.getDrive() };
+        SparkMax[] turnMotors = { m_frontLeft.getTurn(), m_frontRight.getTurn(), m_rearLeft.getTurn(),
+            m_rearRight.getTurn() };
 
+        for (SparkMax motor : driveMotors) {
+          motor.configure(driveConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+        }
+        for (SparkMax motor : turnMotors) {
+          motor.configure(turnConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+        }
+      }, driveP, driveS, driveV, turnP, turnS, turnV);
+    }
     // Update the odometry in the periodic block
     m_poseEstimator.update(
         Rotation2d.fromDegrees(m_gyro.getAngle()),

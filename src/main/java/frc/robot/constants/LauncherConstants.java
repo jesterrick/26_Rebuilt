@@ -26,7 +26,7 @@ public class LauncherConstants {
   public static final double kAutoLaunchSpeed = 50.0; // RPS
 
   public static final double kAlignP = 0.01;
-  public static final double kAlignD = 0.05;
+  public static final double kAlignD = 0.005;
   public static final double kShotOffset = 0.0;
 
   /* Fixed Hardware Configs */
