@@ -53,7 +53,7 @@ public class Intake extends SubsystemBase {
 
   public Command receive() {
     return this.run(() -> this.runMotor(intakeSpeed.get()))
-        .withTimeout(10.0) // Safety timeout
+        //.withTimeout(10.0) // Safety timeout
         .withName("IntakeReceive")
         .finallyDo(this::stopMotor);
   }

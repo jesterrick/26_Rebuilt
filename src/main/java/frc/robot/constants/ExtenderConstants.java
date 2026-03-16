@@ -15,21 +15,21 @@ public class ExtenderConstants {
   public static final double kA = 0.4;
   public static final double kMaxAccel = 12.0;
 
-  public static final double kAllowedError = Units.inchesToMeters(0.2);
+  public static final double kAllowedError = Units.inchesToMeters(0.1);
 
-  public static final double kMaxPositionDifference = Units.inchesToMeters(2.0);
+  public static final double kMaxPositionDifference = Units.inchesToMeters(1.5);
 
   public static final double kExtendOutTarget = Units.inchesToMeters(12.0);
 
-  public static final double kExtendPartialTarget = Units.inchesToMeters(8.0);
+  public static final double kExtendPartialTarget = Units.inchesToMeters(6.0);
 
-  public static final double kExtendLaunchTarget = Units.inchesToMeters(10.0);
+  public static final double kExtendLaunchTarget = Units.inchesToMeters(8.0);
 
   public static final double kErrorToleranceInInches = 0.1;
 
   /* Fixed Hardware Configs */
 
-  public static final int kCurrentLimit = GlobalConstants.kMediumCurrentLimit;
+  public static final int kCurrentLimit = GlobalConstants.kHighCurrentLimit;
 
   public static final double kGearRatio = 36.0;
 

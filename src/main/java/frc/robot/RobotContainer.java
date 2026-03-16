@@ -15,6 +15,7 @@ import frc.robot.utils.Telemetry;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.path.PathPlannerPath;
 import com.revrobotics.spark.SparkMax;
 
@@ -36,9 +37,9 @@ import edu.wpi.first.wpilibj2.command.button.JoystickButton;
  */
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
-  public DriveSubsystem m_RobotDrive = new DriveSubsystem();
+  public DriveSubsystem m_DriveSubsystem = new DriveSubsystem();
   public Intake m_Intake = new Intake();
-  public Launcher m_Launcher = new Launcher(m_RobotDrive);
+  public Launcher m_Launcher = new Launcher(m_DriveSubsystem);
   public Extender m_Extender = new Extender();
   public Feeder m_Feeder = new Feeder();
 
@@ -68,17 +69,27 @@ public class RobotContainer {
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
   public RobotContainer() {
-    // Enable debug telemetry by default.
-    Telemetry.setDebugEnabled(true);
+    /* REAL COMMANDS */
+    //NamedCommands.registerCommand("autoLaunch", m_Launcher.launchWithVision().alongWith(
+    //                Commands.waitUntil(() -> m_Launcher.atSpeed() && (!useVisionForLaunch || m_Launcher.isAligned()))
+    //                    .andThen(
+    //                        m_Extender.launchExtend()
+    //                            .alongWith(m_Feeder.feedLauncher()).withTimeout(3)))
+    //            .finallyDo((interrupted) -> m_Extender.fullExtend().schedule()));
+    //NamedCommands.registerCommand("autoIntake", m_Intake.receive().withTimeout(7));
+
+    /* SIMULATED COMMANDS */
+    NamedCommands.registerCommand("autoLaunch", m_Launcher.launchWithVision().withTimeout(3));
+    NamedCommands.registerCommand("autoIntake", m_Intake.receive().withTimeout(3));
 
     // Configure the trigger bindings
     configureBindings();
 
-    m_RobotDrive.setDefaultCommand(
-        m_RobotDrive.driveCommand(
-            () -> m_driverJoystick.getY(),
-            () -> m_driverJoystick.getX(),
-            () -> m_driverJoystick.getZ(),
+    m_DriveSubsystem.setDefaultCommand(
+        m_DriveSubsystem.driveCommand(
+            () -> -m_driverJoystick.getY(), // Push forward (-Y) -> +X Speed (Forward)
+            () -> -m_driverJoystick.getX(), // Push left (-X) -> +Y Speed (Left)
+            () -> -m_driverJoystick.getZ(), // Twist CCW (-Z) -> +Rot Speed (CCW)
             () -> fieldRelative));
   }
 
@@ -151,10 +162,13 @@ public class RobotContainer {
                 )
                 .alongWith(
                     Commands.waitUntil(() -> m_Launcher.atSpeed() && (!useVisionForLaunch || m_Launcher.isAligned()))
-                        .andThen(m_Feeder.feedLauncher())));
+                        .andThen(
+                            m_Extender.launchExtend()
+                                .alongWith(m_Feeder.feedLauncher())))
+                .finallyDo((interrupted) -> m_Extender.fullExtend().schedule()));
     
     // orient the robot to the field
-    this.b_OrientRobot.onTrue(m_RobotDrive.orient());
+    this.b_OrientRobot.onTrue(m_DriveSubsystem.orient());
 
     this.b_AlignRobot.whileTrue(m_Launcher.align(() -> m_driverJoystick.getY(), () -> m_driverJoystick.getX(), () -> fieldRelative));
 
@@ -167,14 +181,14 @@ public class RobotContainer {
 
   private final Notifier healthCheckNotifier = new Notifier(() -> {
     // This code runs in the BACKGROUND. No lag for you!
-    checkMotor(m_RobotDrive.getRightFrontDrive(), "Right Front Drive");
-    checkMotor(m_RobotDrive.getRightFrontTurn(), "Right Front Turn");
-    checkMotor(m_RobotDrive.getLeftFrontDrive(), "Left Front Drive");
-    checkMotor(m_RobotDrive.getLeftFrontTurn(), "Left Front Turn");
-    checkMotor(m_RobotDrive.getRightRearDrive(), "Right Rear Drive");
-    checkMotor(m_RobotDrive.getRightRearTurn(), "Right Rear Turn");
-    checkMotor(m_RobotDrive.getLeftRearDrive(), "Left Rear Drive");
-    checkMotor(m_RobotDrive.getLeftRearTurn(), "Left Rear Turn");
+    checkMotor(m_DriveSubsystem.getRightFrontDrive(), "Right Front Drive");
+    checkMotor(m_DriveSubsystem.getRightFrontTurn(), "Right Front Turn");
+    checkMotor(m_DriveSubsystem.getLeftFrontDrive(), "Left Front Drive");
+    checkMotor(m_DriveSubsystem.getLeftFrontTurn(), "Left Front Turn");
+    checkMotor(m_DriveSubsystem.getRightRearDrive(), "Right Rear Drive");
+    checkMotor(m_DriveSubsystem.getRightRearTurn(), "Right Rear Turn");
+    checkMotor(m_DriveSubsystem.getLeftRearDrive(), "Left Rear Drive");
+    checkMotor(m_DriveSubsystem.getLeftRearTurn(), "Left Rear Turn");
     checkMotor(m_Extender.getLeader(), "Extender Leader");
     checkMotor(m_Extender.getFollower(), "Extender Follower");
     checkMotor(m_Intake.getMotor(), "Intake");
@@ -233,7 +247,7 @@ public class RobotContainer {
    */
   public Command stopAll() {
     return Commands.parallel(
-        m_RobotDrive.driveCommand(() -> 0, () -> 0, () -> 0, () -> false),
+        m_DriveSubsystem.driveCommand(() -> 0, () -> 0, () -> 0, () -> false),
         m_Intake.stop(),
         m_Launcher.off(),
         m_Extender.stopCommand(),
@@ -246,15 +260,15 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-    try{
-        // Load the path you want to follow using its name in the GUI
-        PathPlannerPath path = PathPlannerPath.fromPathFile("AutoShoot(Left)");
-
-        // Create a path following command using AutoBuilder. This will also trigger event markers.
-        return AutoBuilder.followPath(path);
+    try {
+      // Use AutoBuilder to load the entire .auto file.
+      // This automatically calls resetOdometry to the starting pose of the auto.
+     // PathPlannerPath path = PathPlannerPath.fromPathFile("AutoStart");
+     // return AutoBuilder.followPath(path);
+     return AutoBuilder.buildAuto("TestAuto");
     } catch (Exception e) {
-        DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());
-        return Commands.none();
+      DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());
+      return Commands.none();
     }
   }
 
@@ -271,5 +285,10 @@ public class RobotContainer {
   public void periodic() {
     Telemetry.putBoolean("Launcher/Launch With Vision", useVisionForLaunch);
     Telemetry.putBoolean("Drive/Field Oriented", fieldRelative);
+    m_DriveSubsystem.periodic();
+  }
+
+  public void simulationPeriodic() {
+    m_DriveSubsystem.simulationPeriodic();
   }
 }

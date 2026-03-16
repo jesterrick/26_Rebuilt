@@ -29,7 +29,7 @@ public class IntakeConfigs {
         .kS(IntakeConstants.kS)
         .kA(IntakeConstants.kA);
 
-    config.inverted(false);
+    config.inverted(true);
 
     config
       .voltageCompensation(GlobalConstants.kLowVoltageCompensation)

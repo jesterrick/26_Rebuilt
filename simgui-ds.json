@@ -1,12 +1,12 @@
 {
-  "Keyboard 0 Settings": {
+  "Keyboard 1 Settings": {
     "window": {
       "visible": true
     }
   },
-  "Keyboard 1 Settings": {
+  "System Joysticks": {
     "window": {
-      "visible": true
+      "enabled": false
     }
   },
   "keyboardJoysticks": [
@@ -115,7 +115,7 @@
   ],
   "robotJoysticks": [
     {
-      "guid": "Keyboard0"
+      "guid": "03000000f51000005570000000000000"
     },
     {
       "guid": "Keyboard1"

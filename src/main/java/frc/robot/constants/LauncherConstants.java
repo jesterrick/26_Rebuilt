@@ -25,8 +25,9 @@ public class LauncherConstants {
 
   public static final double kAutoLaunchSpeed = 50.0; // RPS
 
-  public static final double kAlignP = 0.01;
-  public static final double kAlignD = 0.005;
+  public static final double kAlignP = 0.015;
+  public static final double kAlignD = 0.01;
+  public static final double kAlignTolerace = 3.0;
   public static final double kShotOffset = 0.0;
 
   /* Fixed Hardware Configs */
@@ -44,9 +45,9 @@ public class LauncherConstants {
   static {
     // format: kShotMap.put(distanceInMeters, speedInRPS);
     kShotMap.put(Units.inchesToMeters(24.0), 45.0);
-    kShotMap.put(Units.inchesToMeters(48.0), 52.0);
-    kShotMap.put(Units.inchesToMeters(67.0), 58.0);
-    kShotMap.put(Units.inchesToMeters(96.0), 66.0);
+    kShotMap.put(Units.inchesToMeters(48.0), 51.0);
+    kShotMap.put(Units.inchesToMeters(67.0), 57.0);
+    kShotMap.put(Units.inchesToMeters(96.0), 65.0);
   }
 
 }

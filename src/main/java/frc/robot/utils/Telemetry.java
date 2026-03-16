@@ -11,7 +11,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  * Allows for easy toggling of verbose debug data to save CAN/Network bandwidth.
  */
 public class Telemetry {
-    private static boolean m_debugEnabled = false;
+    private static boolean m_debugEnabled = true;
 
     public static void setDebugEnabled(boolean enabled) {
         m_debugEnabled = enabled;

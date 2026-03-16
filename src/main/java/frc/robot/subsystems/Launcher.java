@@ -16,6 +16,7 @@ import frc.robot.constants.CanIdConstants;
 import frc.robot.constants.GlobalConstants;
 import frc.robot.configs.LauncherConfigs;
 import frc.robot.constants.LauncherConstants;
+import frc.robot.constants.OIConstants;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import frc.robot.constants.VisionConstants;
 import frc.robot.utils.VisionUtils;
@@ -23,6 +24,7 @@ import frc.robot.utils.LoggedTunableNumber;
 import frc.robot.utils.Telemetry;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.util.Units;
 
 public class Launcher extends SubsystemBase {
@@ -64,7 +66,7 @@ public class Launcher extends SubsystemBase {
     this.m_TargetSpeed = 0.0;
     this.m_Table = NetworkTableInstance.getDefault().getTable("limelight");
 
-    m_AlignPID.setTolerance(1.0); // 1 degree tolerance
+    m_AlignPID.setTolerance(LauncherConstants.kAlignTolerace); // 1.5 degree tolerance
 
     // Ensure Limelight is in the correct pipeline for vision tracking
     this.m_Table.getEntry("pipeline").setNumber(VisionConstants.VISION_PIPELINE);
@@ -100,8 +102,9 @@ public class Launcher extends SubsystemBase {
       // Filter the vision inputs to reduce jitter
       m_TY = m_TYFilter
           .calculate(m_Table.getEntry(VisionConstants.kTargetYKey).getDouble(VisionConstants.kDefaultTargetY));
-      m_TX = m_TXFilter
-          .calculate(m_Table.getEntry(VisionConstants.kTargetXKey).getDouble(VisionConstants.kDefaultTargetX));
+      
+      // Use raw TX to reduce latency for the PID loop
+      m_TX = m_Table.getEntry(VisionConstants.kTargetXKey).getDouble(VisionConstants.kDefaultTargetX);
     } else {
       this.m_HasTarget = false;
       m_TY = 0.0;
@@ -115,6 +118,7 @@ public class Launcher extends SubsystemBase {
     Telemetry.putDebugNumber("Launcher/Target Speed", m_TargetSpeed);
     Telemetry.putBoolean("Launcher/At Speed", atSpeed());
     Telemetry.putBoolean("Launcher/Is Aligned", isAligned());
+    Telemetry.putNumber("Launcher/Alignment Error", m_TX);
 
     // Debugging high-frequency vision data
     Telemetry.putDebugNumber("Launcher/Raw TX", m_TX);
@@ -156,7 +160,7 @@ public class Launcher extends SubsystemBase {
   }
 
   public boolean isAligned() {
-    return m_HasTarget && Math.abs(m_TX) < 1.0; // 1.0 degree tolerance
+    return m_HasTarget && Math.abs(m_TX) < LauncherConstants.kAlignTolerace; // 1.0 degree tolerance
   }
 
   public double getTX() {
@@ -208,25 +212,24 @@ public class Launcher extends SubsystemBase {
     return LauncherConstants.kShotMap.get(distance) + shotOffset.get();
   }
 
-  public Command align(DoubleSupplier xSpeed, DoubleSupplier ySpeed, java.util.function.BooleanSupplier fieldRelative) {
+  public Command align(DoubleSupplier xSupplier, DoubleSupplier ySupplier,
+      java.util.function.BooleanSupplier fieldRelative) {
     return Commands.run(() -> {
+      double xSpeed = -MathUtil.applyDeadband(xSupplier.getAsDouble(), OIConstants.kDriveDeadband);
+      double ySpeed = -MathUtil.applyDeadband(ySupplier.getAsDouble(), OIConstants.kDriveDeadband);
+
       double rotationSpeed = 0;
       if (m_HasTarget) {
-        rotationSpeed = m_AlignPID.calculate(m_TX, 0);
-
-        // Only apply feed-forward when far from setpoint to overcome static friction
-        if (!m_AlignPID.atSetpoint()) {
-          double minStep = 0.05;
-          // Only add feed-forward if PID output is too small to overcome friction
-          if (Math.abs(rotationSpeed) < minStep) {
-            rotationSpeed = Math.copySign(minStep, rotationSpeed);
-          }
+        // If we are already aligned, don't try to rotate (stops the shaking)
+        if (isAligned()) {
+          rotationSpeed = 0;
+        } else {
+          rotationSpeed = m_AlignPID.calculate(m_TX, 0);
         }
-
         rotationSpeed = Math.max(-1.0, Math.min(1.0, rotationSpeed));
       }
 
-      m_DriveSystem.drive(xSpeed.getAsDouble(), ySpeed.getAsDouble(), rotationSpeed, fieldRelative.getAsBoolean());
+      m_DriveSystem.drive(xSpeed, ySpeed, rotationSpeed, fieldRelative.getAsBoolean());
     }, m_DriveSystem).withName("AlignToTargetPID");
   }
 

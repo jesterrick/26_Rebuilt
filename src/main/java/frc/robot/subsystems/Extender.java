@@ -30,6 +30,7 @@ public class Extender extends SubsystemBase {
   private final SparkMax m_FollowMotor;
 
   private final SparkClosedLoopController m_LeaderController;
+  private final SparkClosedLoopController m_FollowController;
 
   private final RelativeEncoder m_LeaderEncoder;
   private final RelativeEncoder m_FollowEncoder;
@@ -61,6 +62,7 @@ public class Extender extends SubsystemBase {
     this.m_FollowMotor = new SparkMax(CanIdConstants.kExtenderMotor2, SparkLowLevel.MotorType.kBrushless);
 
     this.m_LeaderController = this.m_LeaderMotor.getClosedLoopController();
+    this.m_FollowController = this.m_FollowMotor.getClosedLoopController();
 
     this.m_LeaderEncoder = this.m_LeaderMotor.getEncoder();
     this.m_FollowEncoder = this.m_FollowMotor.getEncoder();
@@ -68,12 +70,13 @@ public class Extender extends SubsystemBase {
     // Configure motor controllers (no encoder config needed for SparkMax)
     SparkMaxConfig leaderConfig = new SparkMaxConfig().apply(ExtenderConfigs.config);
     leaderConfig.inverted(false);
-    this.m_LeaderMotor.configure(leaderConfig, ResetMode.kResetSafeParameters,
+    this.m_LeaderMotor.configure(leaderConfig, ResetMode.kNoResetSafeParameters,
         PersistMode.kPersistParameters);
 
     SparkMaxConfig followerConfig = new SparkMaxConfig().apply(ExtenderConfigs.config);
-    followerConfig.follow(this.m_LeaderMotor, true);
-    this.m_FollowMotor.configure(followerConfig, ResetMode.kResetSafeParameters,
+    followerConfig.inverted(true);
+    // followerConfig.follow(this.m_LeaderMotor, true);
+    this.m_FollowMotor.configure(followerConfig, ResetMode.kNoResetSafeParameters,
         PersistMode.kPersistParameters);
 
     this.m_LeaderEncoder.setPosition(0);
@@ -106,6 +109,11 @@ public class Extender extends SubsystemBase {
     double followPos = this.m_FollowEncoder.getPosition();
 
     Telemetry.putBoolean("Extender/Faulted", !m_isFaulted);
+    Telemetry.putDebugNumber("Extender/Leader Output", m_LeaderMotor.getAppliedOutput());
+    Telemetry.putDebugNumber("Extender/Follow Output", m_FollowMotor.getAppliedOutput());
+    Telemetry.putDebugNumber("Extender/Leader Current", m_LeaderMotor.getOutputCurrent()); // fix the bug too
+    Telemetry.putDebugNumber("Extender/Leader Velocity", m_LeaderEncoder.getVelocity());
+    Telemetry.putDebugNumber("Extender/Follow Velocity", m_FollowEncoder.getVelocity());
     Telemetry.putDebugNumber("Extender/Leader POS", Units.metersToInches(leaderPos));
     Telemetry.putDebugNumber("Extender/Follow POS", Units.metersToInches(followPos));
     Telemetry.putDebugNumber("Extender/Target POS", Units.metersToInches(this.m_TargetPOS));
@@ -114,13 +122,17 @@ public class Extender extends SubsystemBase {
     Telemetry.putDebugNumber("Extender/Position Tolerace", ExtenderConstants.kPositionTolerance);
     Telemetry.putDebugNumber("Extender/CruiseVelocity", ExtenderConstants.kCruiseVelocity);
     Telemetry.putDebugNumber("Extender/MaxAccel", ExtenderConstants.kMaxAccel);
+    Telemetry.putDebugNumber("Extender/Leader Faults", m_LeaderMotor.getFaults().rawBits);
+    Telemetry.putDebugNumber("Extender/Follow Faults", m_FollowMotor.getFaults().rawBits);
+    Telemetry.putDebugNumber("Extender/Leader POS Raw", m_LeaderEncoder.getPosition());
+    Telemetry.putString("Extender/Leader Last Error", m_LeaderMotor.getLastError().toString());
 
     if (m_isFaulted) {
       stopMotors(); // Keep them stopped if we are already in a fault state
       return;
     }
 
-    // High current + low velocity = stall
+    /*/ High current + low velocity = stall
     boolean leaderStalled = m_LeaderMotor.getOutputCurrent() > ExtenderConstants.kCurrentLimit
         && Math.abs(m_LeaderEncoder.getVelocity()) < 0.01;
     boolean followStalled = m_FollowMotor.getOutputCurrent() > ExtenderConstants.kCurrentLimit
@@ -129,7 +141,7 @@ public class Extender extends SubsystemBase {
     if (leaderStalled || followStalled) {
       m_isFaulted = true;
       stopMotors();
-    }
+    }*/
 
     if (Math.abs(leaderPos - followPos) > ExtenderConstants.kMaxPositionDifference) {
       m_isFaulted = true; // Trip the software breaker
@@ -144,18 +156,23 @@ public class Extender extends SubsystemBase {
 
   private Command goToPosition(double position) {
     return this.run(() -> {
+      System.out.println("goToPosition running, target: " + position + " faulted: " + m_isFaulted);
+
       if (!m_isFaulted) {
         this.m_LeaderController.setSetpoint(position, ControlType.kMAXMotionPositionControl);
+        this.m_FollowController.setSetpoint(position, ControlType.kMAXMotionPositionControl);
         // this.m_LeaderController.setSetpoint(position, ControlType.kPosition);
         this.m_TargetPOS = position;
       } else if (position == 0.0) {
         this.m_LeaderController.setSetpoint(position, ControlType.kMAXMotionPositionControl);
+        this.m_FollowController.setSetpoint(position, ControlType.kMAXMotionPositionControl);
         // this.m_LeaderController.setSetpoint(position, ControlType.kPosition);
         this.m_TargetPOS = position;
       }
     })
         .until(() -> m_isFaulted ||
-            Math.abs(m_LeaderEncoder.getPosition() - position) < ExtenderConstants.kPositionTolerance)
+            (Math.abs(m_LeaderEncoder.getPosition() - position) < ExtenderConstants.kPositionTolerance
+                && Math.abs(m_FollowEncoder.getPosition() - position) < ExtenderConstants.kPositionTolerance))
         .withTimeout(3.0)
         .finallyDo((interrupted) -> stopMotors())
         .withName("ExtenderTo" + position);
@@ -187,9 +204,11 @@ public class Extender extends SubsystemBase {
       // Note: If 'stow' is 0.0, you likely need a negative value (e.g., -0.2)
       // to drive into the physical bottom.
       this.m_LeaderMotor.set(-0.2);
+      this.m_FollowMotor.set(-0.2);
     })
         // Trigger when current spikes (30A is a safe starting point for a NEO)
-        .until(() -> m_LeaderMotor.getOutputCurrent() > GlobalConstants.kMediumCurrentLimit)
+        .until(() -> m_LeaderMotor.getOutputCurrent() > GlobalConstants.kLowCurrentLimit
+            && m_FollowMotor.getOutputCurrent() > GlobalConstants.kLowCurrentLimit)
         .finallyDo((interrupted) -> {
           stopMotors();
           if (!interrupted) {

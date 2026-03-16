@@ -7,6 +7,7 @@ package frc.robot.subsystems;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.wpilibj.RobotBase;
 
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkMax;
@@ -31,6 +32,11 @@ public class MAXSwerveModule {
 
   private double m_chassisAngularOffset = 0;
   private SwerveModuleState m_desiredState = new SwerveModuleState(0.0, new Rotation2d());
+
+  // Simulation support
+  private double m_simPosition = 0;
+  private double m_simVelocity = 0;
+  private Rotation2d m_simAngle = new Rotation2d();
 
   /**
    * Constructs a MAXSwerveModule and configures the driving and turning motor,
@@ -67,18 +73,19 @@ public class MAXSwerveModule {
    * @return The current state of the module.
    */
   public SwerveModuleState getState() {
+    if (RobotBase.isSimulation()) {
+      return new SwerveModuleState(m_simVelocity, m_simAngle);
+    }
     // Apply chassis angular offset to the encoder position to get the position
     // relative to the chassis.
     return new SwerveModuleState(m_drivingEncoder.getVelocity(),
         new Rotation2d(m_turningEncoder.getPosition() - m_chassisAngularOffset));
   }
 
-  /**
-   * Returns the current position of the module.
-   *
-   * @return The current position of the module.
-   */
   public SwerveModulePosition getPosition() {
+    if (RobotBase.isSimulation()) {
+      return new SwerveModulePosition(m_simPosition, m_simAngle);
+    }
     // Apply chassis angular offset to the encoder position to get the position
     // relative to the chassis.
     return new SwerveModulePosition(
@@ -86,38 +93,25 @@ public class MAXSwerveModule {
         new Rotation2d(m_turningEncoder.getPosition() - m_chassisAngularOffset));
   }
 
-  /**
-   * Sets the desired state for the module.
-   *
-   * @param desiredState Desired state with speed and angle.
-   */
   public void setDesiredState(SwerveModuleState desiredState) {
-    // 1. If we are asking to stop, don't snap the wheels back to zero
-    if (Math.abs(desiredState.speedMetersPerSecond) < 0.01) {
-      m_drivingClosedLoopController.setSetpoint(0, ControlType.kVelocity);
-      // Keep current angle
-      return;
-    }
-
-    // 2. Apply the chassis angular offset (Better to use the constructor)
-    SwerveModuleState correctedDesiredState = new SwerveModuleState(
-        desiredState.speedMetersPerSecond,
-        desiredState.angle.plus(Rotation2d.fromRadians(m_chassisAngularOffset)));
-
-    // 2. Get current rotation
-    Rotation2d currentRotation = new Rotation2d(m_turningEncoder.getPosition());
-
-    // 3. NEW INSTANCE OPTIMIZATION (Fixes deprecation)
+    // 1. Optimize the state based on the CURRENT (offset-applied) encoder reading
+    Rotation2d currentRotation = new Rotation2d(m_turningEncoder.getPosition() - m_chassisAngularOffset);
+    
+    SwerveModuleState correctedDesiredState = new SwerveModuleState(desiredState.speedMetersPerSecond, desiredState.angle);
     correctedDesiredState.optimize(currentRotation);
 
-    // 4. Scale speed by cosine of angle error
-    correctedDesiredState.cosineScale(currentRotation);
-
-    // 5. Command the SPARK MAX controllers
+    // 2. Command the SPARK MAX controllers
+    // For the motor, we ADD the offset back so the pod points where the chassis thinks it should
     m_drivingClosedLoopController.setSetpoint(correctedDesiredState.speedMetersPerSecond, ControlType.kVelocity);
-    m_turningClosedLoopController.setSetpoint(correctedDesiredState.angle.getRadians(), ControlType.kPosition);
+    m_turningClosedLoopController.setSetpoint(correctedDesiredState.angle.getRadians() + m_chassisAngularOffset, ControlType.kPosition);
 
     m_desiredState = correctedDesiredState;
+  }
+
+  public void updateSimulation(double dtSeconds) {
+    m_simVelocity = m_desiredState.speedMetersPerSecond;
+    m_simPosition += m_simVelocity * dtSeconds;
+    m_simAngle = m_desiredState.angle;
   }
 
   /** Zeroes all the SwerveModule encoders. */
